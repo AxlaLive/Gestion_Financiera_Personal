@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Briefcase, TrendingUp, Gift, DollarSign, Building2, PiggyBank, Calendar } from 'lucide-react';
+import { X, Briefcase, TrendingUp, Gift, DollarSign, Building2, PiggyBank, Calendar, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { parseAmountInput, isValidAmount, formatCurrency } from '@/lib/currency';
@@ -10,17 +10,21 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useCrearTransaccion } from '@/hooks/use-transacciones';
+import { useCategorias } from '@/hooks/use-categorias';
 import { useToast } from '@/hooks/use-toast';
 
-// TODO: Mapear IDs de categoría del backend real
-const categories = [
-  { id: 2, slug: 'salario', label: 'Salario', icon: Briefcase },
-  { id: 3, slug: 'freelance', label: 'Freelance', icon: TrendingUp },
-  { id: 4, slug: 'regalo', label: 'Regalo', icon: Gift },
-  { id: 5, slug: 'inversiones', label: 'Inversiones', icon: PiggyBank },
-  { id: 6, slug: 'negocio', label: 'Negocio', icon: Building2 },
-  { id: 7, slug: 'otros', label: 'Otros', icon: DollarSign },
-];
+const iconMap: Record<string, LucideIcon> = {
+  salario: Briefcase,
+  freelance: TrendingUp,
+  regalo: Gift,
+  inversiones: PiggyBank,
+  negocio: Building2,
+};
+
+function getCategoryIcon(nombre: string): LucideIcon {
+  const key = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return iconMap[key] ?? DollarSign;
+}
 
 
 export default function AddIncome() {
@@ -28,6 +32,7 @@ export default function AddIncome() {
   const usuarioGuardado = JSON.parse(localStorage.getItem('usuario') || '{}');
   const USUARIO_ID = usuarioGuardado.id ?? 1;
   const { toast } = useToast();
+  const { data: categorias = [], isLoading: loadingCategorias } = useCategorias(USUARIO_ID, 'INGRESO');
   const [amount, setAmount] = useState('0.00');
   const [date, setDate] = useState<Date>(new Date());
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
@@ -133,8 +138,10 @@ export default function AddIncome() {
         <div className="mb-6">
           <h2 className="mb-3 font-semibold text-foreground">Categoría</h2>
           <div className="grid grid-cols-3 gap-3" role="radiogroup" aria-label="Categoría del ingreso">
-            {categories.map((cat) => {
+            {loadingCategorias && <p className="col-span-3 text-sm text-muted-foreground">Cargando categorías...</p>}
+            {categorias.map((cat) => {
               const isSelected = selectedCategoryId === cat.id;
+              const Icon = getCategoryIcon(cat.nombre);
               return (
                 <button
                   key={cat.id}
@@ -147,10 +154,10 @@ export default function AddIncome() {
                   )}
                   role="radio"
                   aria-checked={isSelected}
-                  aria-label={cat.label}
+                  aria-label={cat.nombre}
                 >
-                  <cat.icon className="h-5 w-5" />
-                  <span className="text-[11px] font-medium">{cat.label}</span>
+                  <Icon className="h-5 w-5" />
+                  <span className="text-[11px] font-medium">{cat.nombre}</span>
                 </button>
               );
             })}

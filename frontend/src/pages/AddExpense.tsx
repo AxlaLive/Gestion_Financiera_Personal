@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, UtensilsCrossed, Car, Home, ShoppingCart, Heart, Gamepad2, Plane, GraduationCap, Shirt, Smartphone, Coffee, DollarSign, Calendar } from 'lucide-react';
+import { X, UtensilsCrossed, Car, Home, ShoppingCart, Heart, Gamepad2, Plane, GraduationCap, Shirt, Smartphone, Coffee, DollarSign, Calendar, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { parseAmountInput, isValidAmount, formatCurrency } from '@/lib/currency';
@@ -10,23 +10,27 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useCrearTransaccion } from '@/hooks/use-transacciones';
+import { useCategorias } from '@/hooks/use-categorias';
 import { useToast } from '@/hooks/use-toast';
 
-// TODO: Mapear IDs de categoría del backend real
-const categories = [
-  { id: 8, slug: 'comida', label: 'Comida', icon: UtensilsCrossed },
-  { id: 9, slug: 'transporte', label: 'Transporte', icon: Car },
-  { id: 10, slug: 'hogar', label: 'Hogar', icon: Home },
-  { id: 11, slug: 'compras', label: 'Compras', icon: ShoppingCart },
-  { id: 12, slug: 'salud', label: 'Salud', icon: Heart },
-  { id: 13, slug: 'ocio', label: 'Ocio', icon: Gamepad2 },
-  { id: 14, slug: 'viajes', label: 'Viajes', icon: Plane },
-  { id: 15, slug: 'educacion', label: 'Educación', icon: GraduationCap },
-  { id: 16, slug: 'ropa', label: 'Ropa', icon: Shirt },
-  { id: 17, slug: 'tecnologia', label: 'Tecnología', icon: Smartphone },
-  { id: 18, slug: 'cafes', label: 'Cafés', icon: Coffee },
-  { id: 19, slug: 'otros', label: 'Otros', icon: DollarSign },
-];
+const iconMap: Record<string, LucideIcon> = {
+  comida: UtensilsCrossed,
+  transporte: Car,
+  hogar: Home,
+  compras: ShoppingCart,
+  salud: Heart,
+  ocio: Gamepad2,
+  viajes: Plane,
+  educacion: GraduationCap,
+  ropa: Shirt,
+  tecnologia: Smartphone,
+  cafes: Coffee,
+};
+
+function getCategoryIcon(nombre: string): LucideIcon {
+  const key = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return iconMap[key] ?? DollarSign;
+}
 
 
 export default function AddExpense() {
@@ -34,6 +38,7 @@ export default function AddExpense() {
   const usuarioGuardado = JSON.parse(localStorage.getItem('usuario') || '{}');
   const USUARIO_ID = usuarioGuardado.id ?? 1;
   const { toast } = useToast();
+  const { data: categorias = [], isLoading: loadingCategorias } = useCategorias(USUARIO_ID, 'GASTO');
   const [amount, setAmount] = useState('0.00');
   const [date, setDate] = useState<Date>(new Date());
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
@@ -141,8 +146,10 @@ export default function AddExpense() {
         <div className="mb-6">
           <h2 className="mb-3 font-semibold text-foreground">Categoría</h2>
           <div className="grid grid-cols-4 gap-3" role="radiogroup" aria-label="Categoría del gasto">
-            {categories.map((cat) => {
+            {loadingCategorias && <p className="col-span-4 text-sm text-muted-foreground">Cargando categorías...</p>}
+            {categorias.map((cat) => {
               const isSelected = selectedCategoryId === cat.id;
+              const Icon = getCategoryIcon(cat.nombre);
               return (
                 <button
                   key={cat.id}
@@ -155,10 +162,10 @@ export default function AddExpense() {
                   )}
                   role="radio"
                   aria-checked={isSelected}
-                  aria-label={cat.label}
+                  aria-label={cat.nombre}
                 >
-                  <cat.icon className="h-5 w-5" />
-                  <span className="text-[11px] font-medium">{cat.label}</span>
+                  <Icon className="h-5 w-5" />
+                  <span className="text-[11px] font-medium">{cat.nombre}</span>
                 </button>
               );
             })}

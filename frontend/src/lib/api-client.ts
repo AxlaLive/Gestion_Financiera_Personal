@@ -1,4 +1,4 @@
-import type { Transaccion, BalanceResponse } from './api-types';
+import type { Transaccion, BalanceResponse, Categoria } from './api-types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -24,6 +24,11 @@ export function fetchBalance(usuarioId: number): Promise<BalanceResponse> {
 // HU-06/07: Historial de transacciones
 export function fetchTransacciones(usuarioId: number): Promise<Transaccion[]> {
   return request<Transaccion[]>(`/api/transacciones/usuario/${usuarioId}`);
+}
+
+// Categorías por usuario
+export function fetchCategorias(usuarioId: number): Promise<Categoria[]> {
+  return request<Categoria[]>(`/api/categorias/usuario/${usuarioId}`);
 }
 
 // HU-06/07: Crear transacción (ingreso o gasto)
