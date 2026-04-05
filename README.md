@@ -1,4 +1,4 @@
-# App Financiera
+# App financiera
 
 Aplicacion de gestion financiera personal que permite registrar ingresos y gastos, categorizar transacciones y consultar el balance general.
 
@@ -10,7 +10,7 @@ app-financiera/
 └── frontend/   # Interfaz web con React + TypeScript + Vite
 ```
 
-## Tecnologias
+## Tecnologías
 
 **Backend:**
 - Java 21, Spring Boot, Maven
@@ -28,7 +28,7 @@ app-financiera/
 - Docker (para PostgreSQL)
 - Node.js o Bun
 
-## Como ejecutar
+## ¿Cómo ejecutar?
 
 ### Backend
 
