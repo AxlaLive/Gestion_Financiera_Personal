@@ -32,7 +32,7 @@ public class BalanceService {
 
         // Escenario 1: Balance positivo [cite: 91]
         if (balance > 0) {
-            return crearRespuestaBalance(balance, "Verde Esmeralda", "¡Vas por buen camino! [cite: 94]");
+            return crearRespuestaBalance(balance, "Verde Esmeralda", "¡Vas por buen camino!");
         } 
         
         // Escenario 2: Balance negativo [cite: 96]
