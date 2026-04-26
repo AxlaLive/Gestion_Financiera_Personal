@@ -42,6 +42,13 @@ public class TransaccionService {
            (!transaccion.getTipo().equalsIgnoreCase("INGRESO") && !transaccion.getTipo().equalsIgnoreCase("GASTO"))) {
             throw new RuntimeException("El tipo de transacción debe ser INGRESO o GASTO para calcular el balance");
         }
+<<<<<<< HEAD
+=======
+
+        // 5. Regla HU-06: Vinculación automática al usuario [cite: 19, 23]
+        // (Nota: El usuario se suele setear desde el Controller con el usuario autenticado)
+        
+>>>>>>> eb5c694bef0655328603a70f5f20d7f923eb8236
         return transaccionRepository.save(transaccion);
     }
 
@@ -49,6 +56,7 @@ public class TransaccionService {
     public List<Transaccion> listarHistorial(Usuario usuario) {
         return transaccionRepository.findByUsuarioOrderByFechaDescIdDesc(usuario);
     }
+<<<<<<< HEAD
 
     @Transactional
     public Transaccion actualizarTransaccion(Long id, Transaccion datosNuevos, Long usuarioId) {
@@ -90,4 +98,6 @@ public class TransaccionService {
 
         transaccionRepository.delete(existente);
     }
+=======
+>>>>>>> eb5c694bef0655328603a70f5f20d7f923eb8236
 }

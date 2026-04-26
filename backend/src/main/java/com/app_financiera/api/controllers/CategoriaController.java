@@ -4,7 +4,10 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+<<<<<<< HEAD
 import org.springframework.web.bind.annotation.DeleteMapping;
+=======
+>>>>>>> eb5c694bef0655328603a70f5f20d7f923eb8236
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +34,7 @@ public class CategoriaController {
     public ResponseEntity<List<Categoria>> listar(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(categoriaService.listarPorUsuario(usuarioId));
     }
+<<<<<<< HEAD
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         try {
@@ -40,4 +44,6 @@ public class CategoriaController {
             return ResponseEntity.badRequest().body("No se puede eliminar la categoría");
         }
     }
+=======
+>>>>>>> eb5c694bef0655328603a70f5f20d7f923eb8236
 }

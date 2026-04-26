@@ -8,8 +8,11 @@ import org.springframework.stereotype.Service;
 import com.app_financiera.api.entities.Categoria;
 import com.app_financiera.api.repositories.CategoriaRepository;
 
+<<<<<<< HEAD
 import jakarta.transaction.Transactional;
 
+=======
+>>>>>>> eb5c694bef0655328603a70f5f20d7f923eb8236
 @Service
 public class CategoriaService {
 
@@ -27,6 +30,7 @@ public class CategoriaService {
     public List<Categoria> listarPorUsuario(Long usuarioId) {
         return categoriaRepository.findByUsuarioId(usuarioId);
     }
+<<<<<<< HEAD
 
     // --- NUEVOS MÉTODOS PARA LA GESTIÓN DE CATEGORÍAS ---
 
@@ -62,4 +66,6 @@ public class CategoriaService {
             throw new RuntimeException("No se puede eliminar la categoría porque está siendo utilizada en movimientos registrados");
         }
     }
+=======
+>>>>>>> eb5c694bef0655328603a70f5f20d7f923eb8236
 }
