@@ -42,13 +42,10 @@ public class TransaccionService {
            (!transaccion.getTipo().equalsIgnoreCase("INGRESO") && !transaccion.getTipo().equalsIgnoreCase("GASTO"))) {
             throw new RuntimeException("El tipo de transacción debe ser INGRESO o GASTO para calcular el balance");
         }
-<<<<<<< HEAD
-=======
 
         // 5. Regla HU-06: Vinculación automática al usuario [cite: 19, 23]
         // (Nota: El usuario se suele setear desde el Controller con el usuario autenticado)
         
->>>>>>> eb5c694bef0655328603a70f5f20d7f923eb8236
         return transaccionRepository.save(transaccion);
     }
 
@@ -56,48 +53,4 @@ public class TransaccionService {
     public List<Transaccion> listarHistorial(Usuario usuario) {
         return transaccionRepository.findByUsuarioOrderByFechaDescIdDesc(usuario);
     }
-<<<<<<< HEAD
-
-    @Transactional
-    public Transaccion actualizarTransaccion(Long id, Transaccion datosNuevos, Long usuarioId) {
-        // 1. Validar que exista y que pertenezca al usuario (RNF Seguridad)
-        Transaccion existente = transaccionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transacción no encontrada"));
-
-        if (!existente.getUsuario().getId().equals(usuarioId)) {
-            throw new RuntimeException("No tienes permiso para editar esta transacción");
-        }
-
-        // 2. Aplicar validaciones de la HU (reutilizando tu lógica existente)
-        if (datosNuevos.getMonto() == null || datosNuevos.getMonto() <= 0) {
-            throw new RuntimeException("El monto debe ser un valor positivo mayor a cero");
-        }
-        if (datosNuevos.getFecha() != null && datosNuevos.getFecha().isAfter(LocalDate.now())) {
-            throw new RuntimeException("No puedes registrar transacciones con fechas futuras");
-        }
-
-        // 3. Actualizar datos
-        existente.setMonto(datosNuevos.getMonto());
-        existente.setDescripcion(datosNuevos.getDescripcion());
-        existente.setFecha(datosNuevos.getFecha());
-        existente.setCategoria(datosNuevos.getCategoria());
-        existente.setTipo(datosNuevos.getTipo());
-
-        return transaccionRepository.save(existente);
-    }
-
-    @Transactional
-    public void eliminarTransaccion(Long id, Long usuarioId) {
-        // Validar propiedad antes de borrar
-        Transaccion existente = transaccionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transacción no encontrada"));
-
-        if (!existente.getUsuario().getId().equals(usuarioId)) {
-            throw new RuntimeException("No tienes permiso para eliminar esta transacción");
-        }
-
-        transaccionRepository.delete(existente);
-    }
-=======
->>>>>>> eb5c694bef0655328603a70f5f20d7f923eb8236
 }
