@@ -29,6 +29,7 @@ const App = () => (
           <Route path="/add-income" element={<AddIncome />} />
           <Route path="/budgets" element={<Budgets />} />
           <Route path="/transacciones" element={<Transactions />} />
+          <Route path="/transactions" element={<Transactions />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
