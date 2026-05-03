@@ -5,7 +5,11 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
+<<<<<<< HEAD
 		<version>4.0.6</version>
+=======
+		<version>4.0.5</version>
+>>>>>>> 1fd01cd34ce9c9a4a0a7e55c789d3722519ae4d5
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.app_financiera</groupId>

@@ -2,7 +2,10 @@ package com.app_financiera.api.services;
 
 import java.time.LocalDate;
 import java.util.List;
+<<<<<<< HEAD
 import java.util.Optional;
+=======
+>>>>>>> 1fd01cd34ce9c9a4a0a7e55c789d3722519ae4d5
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -54,6 +57,7 @@ public class TransaccionService {
     public List<Transaccion> listarHistorial(Usuario usuario) {
         return transaccionRepository.findByUsuarioOrderByFechaDescIdDesc(usuario);
     }
+<<<<<<< HEAD
 
     @Transactional
     public Transaccion actualizarTransaccion(Long id, Transaccion actualizacion) {
@@ -132,4 +136,6 @@ public void eliminarTransaccion(Long id) {
     // 3. Ejecutar eliminación
     transaccionRepository.delete(transaccion); 
 }
+=======
+>>>>>>> 1fd01cd34ce9c9a4a0a7e55c789d3722519ae4d5
 }
