@@ -28,4 +28,8 @@ public class Categoria {
     @JoinColumn(name = "usuario_id", nullable = true)
     private Usuario usuario;
 
+    // Para HU-12: Presupuesto máximo mensual por categoría
+    @Column(nullable = true)
+    private Double presupuestoMensual; // monto máximo permitido para gastos en esta categoría cada mes
+
 }
