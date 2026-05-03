@@ -2,6 +2,7 @@ package com.app_financiera.api.services;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -52,5 +53,53 @@ public class TransaccionService {
     // Método para listar (HU-09: Historial cronológico) [cite: 72, 73]
     public List<Transaccion> listarHistorial(Usuario usuario) {
         return transaccionRepository.findByUsuarioOrderByFechaDescIdDesc(usuario);
+    }
+
+    // Método para obtener DTO de historial (HU-09: Evitar lazy loading) [cite: 72, 73]
+    public List<TransaccionDTO> listarHistorialDTO(Usuario usuario) {
+        return transaccionRepository.findByUsuarioOrderByFechaDescIdDesc(usuario).stream()
+                .map(t -> new TransaccionDTO(
+                        t.getId(),
+                        t.getMonto(),
+                        t.getDescripcion(),
+                        t.getFecha(),
+                        t.getTipo(),
+                        t.getCategoria() != null ? t.getCategoria().getId() : null,
+                        t.getCategoria() != null ? t.getCategoria().getNombre() : null
+                ))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * DTO para respuestas de transacciones
+     * HU-09: Evita exponer la entidad completa y lazy loading de categoría
+     */
+    public static class TransaccionDTO {
+        private Long id;
+        private Double monto;
+        private String descripcion;
+        private LocalDate fecha;
+        private String tipo;
+        private Long categoriaId;
+        private String categoriaNombre;
+
+        public TransaccionDTO(Long id, Double monto, String descripcion, LocalDate fecha, 
+                             String tipo, Long categoriaId, String categoriaNombre) {
+            this.id = id;
+            this.monto = monto;
+            this.descripcion = descripcion;
+            this.fecha = fecha;
+            this.tipo = tipo;
+            this.categoriaId = categoriaId;
+            this.categoriaNombre = categoriaNombre;
+        }
+
+        public Long getId() { return id; }
+        public Double getMonto() { return monto; }
+        public String getDescripcion() { return descripcion; }
+        public LocalDate getFecha() { return fecha; }
+        public String getTipo() { return tipo; }
+        public Long getCategoriaId() { return categoriaId; }
+        public String getCategoriaNombre() { return categoriaNombre; }
     }
 }
