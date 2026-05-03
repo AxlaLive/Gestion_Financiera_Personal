@@ -1,0 +1,58 @@
+import type { Transaction } from "./types";
+
+export const INITIAL_TRANSACTIONS: Transaction[] = [
+  {
+    id: "1",
+    type: "income",
+    amount: 12500,
+    date: "2026-04-25",
+    time: "19:00",
+    category: "salario",
+    description: "Pago mensual - Empresa XYZ",
+  },
+  {
+    id: "2",
+    type: "expense",
+    amount: 1250,
+    date: "2026-04-24",
+    time: "14:30",
+    category: "compras",
+    description: "Compra en Amazon - Electrónicos",
+  },
+  {
+    id: "3",
+    type: "income",
+    amount: 3500,
+    date: "2026-04-23",
+    time: "10:15",
+    category: "freelance",
+    description: "Proyecto de diseño web - Cliente ABC",
+  },
+  {
+    id: "4",
+    type: "expense",
+    amount: 850.5,
+    date: "2026-04-22",
+    time: "18:45",
+    category: "comida",
+    description: "Supermercado Soriana",
+  },
+  {
+    id: "5",
+    type: "expense",
+    amount: 420,
+    date: "2026-04-21",
+    time: "08:30",
+    category: "transporte",
+    description: "Gasolina",
+  },
+  {
+    id: "6",
+    type: "expense",
+    amount: 180,
+    date: "2026-04-20",
+    time: "10:15",
+    category: "cafes",
+    description: "Café con cliente",
+  },
+];
