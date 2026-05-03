@@ -5,17 +5,12 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-<<<<<<< HEAD
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-=======
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
->>>>>>> 1fd01cd34ce9c9a4a0a7e55c789d3722519ae4d5
+
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,7 +45,6 @@ public class TransaccionController {
         usuario.setId(usuarioId);
         return ResponseEntity.ok(transaccionService.listarHistorial(usuario));
     }
-<<<<<<< HEAD
 
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizarTransaccion(@PathVariable Long id, @RequestBody Transaccion actualizacion) {
@@ -73,6 +67,4 @@ public class TransaccionController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-=======
->>>>>>> 1fd01cd34ce9c9a4a0a7e55c789d3722519ae4d5
 }
