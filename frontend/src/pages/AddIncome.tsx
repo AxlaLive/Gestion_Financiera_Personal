@@ -30,7 +30,7 @@ function getCategoryIcon(nombre: string): LucideIcon {
 export default function AddIncome() {
   const navigate = useNavigate();
   const usuarioGuardado = JSON.parse(localStorage.getItem('usuario') || '{}');
-  const USUARIO_ID = usuarioGuardado.id ?? 1;
+  const USUARIO_ID = usuarioGuardado?.id as number | undefined;
   const { toast } = useToast();
   const { data: categorias = [], isLoading: loadingCategorias } = useCategorias(USUARIO_ID, 'INGRESO');
   const [amount, setAmount] = useState('0.00');

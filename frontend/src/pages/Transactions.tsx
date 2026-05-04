@@ -9,6 +9,7 @@ import {
   X,
   Plus,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -24,9 +25,12 @@ import { TransactionDetailDialog } from "@/components/TransactionDetailDialog";
 import { EditTransactionDialog } from "@/components/EditTransactionDialog";
 import { DeleteTransactionDialog } from "@/components/DeleteTransactionDialog";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { useTransactions, updateTransaction, deleteTransaction } from "@/features/transactions/store";
 import { CATEGORIES } from "@/features/transactions/categories";
+import { useCategorias } from "@/hooks/use-categorias";
+import { useTransacciones } from "@/hooks/use-transacciones";
+import api from "../api/axios";
 import type { Transaction, CategoryId, TransactionType } from "@/features/transactions/types";
+import type { Transaccion } from "@/lib/api-types";
 import { formatDateShort, formatTime12h } from "@/features/transactions/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -100,13 +104,40 @@ function groupByDate(transactions: Transaction[]) {
 
 export default function Transactions() {
   const navigate = useNavigate();
-  const transactions = useTransactions();
+  const queryClient = useQueryClient();
+  const usuarioGuardado = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const USUARIO_ID = usuarioGuardado?.id as number | undefined;
+  const { data: transaccionesBackend = [] } = useTransacciones(USUARIO_ID);
+  const { data: categorias = [] } = useCategorias(USUARIO_ID);
   const [query, setQuery] = useState("");
+
+  const transactions = useMemo<Transaction[]>(
+    () =>
+      transaccionesBackend.map((transaccion: Transaccion) => {
+        const normalizedCategory = (transaccion.categoria?.nombre ?? "otros").toLowerCase();
+        const category = CATEGORIES.some((category) => category.id === normalizedCategory)
+          ? (normalizedCategory as CategoryId)
+          : "otros";
+
+        return {
+          id: String(transaccion.id),
+          type: transaccion.tipo === "INGRESO" ? ("income" as TransactionType) : ("expense" as TransactionType),
+          amount: transaccion.monto,
+          date: transaccion.fecha,
+          time: "00:00",
+          category,
+          description: transaccion.descripcion ?? "",
+        };
+      }),
+    [transaccionesBackend]
+  );
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryId | "all">("all");
   const [selected, setSelected] = useState<Transaction | null>(null);
   const [view, setView] = useState<DialogView>("none");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const activeFilters = [
     typeFilter !== "all",
@@ -140,7 +171,7 @@ export default function Transactions() {
     setView("edit");
   }
 
-  function handleSubmitEdit(patch: {
+  async function handleSubmitEdit(patch: {
     amount: number;
     date: string;
     time: string;
@@ -148,16 +179,53 @@ export default function Transactions() {
     description: string;
   }) {
     if (!selected) return;
-    updateTransaction(selected.id, patch);
-    setView("none");
-    setSelected(null);
+    setIsSaving(true);
+
+    const categoriaSeleccionada = categorias.find(
+      (cat) => cat.nombre?.toLowerCase() === patch.category.toLowerCase()
+    );
+
+    const payload: Record<string, unknown> = {
+      monto: patch.amount,
+      descripcion: patch.description,
+      fecha: patch.date,
+      tipo: selected.type === 'income' ? 'INGRESO' : 'GASTO',
+      usuario: { id: USUARIO_ID },
+    };
+
+    if (categoriaSeleccionada?.id != null) {
+      payload.categoria = { id: categoriaSeleccionada.id };
+    }
+
+    try {
+      await api.put(`/transacciones/${selected.id}`, payload);
+      await queryClient.invalidateQueries({ queryKey: ['transacciones', USUARIO_ID] });
+      await queryClient.invalidateQueries({ queryKey: ['balance', USUARIO_ID] });
+      setView("none");
+      setSelected(null);
+    } catch (error) {
+      console.error(error);
+      alert('No se pudo actualizar la transacción.');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  function handleConfirmDelete() {
+  async function handleConfirmDelete() {
     if (!selected) return;
-    deleteTransaction(selected.id);
-    setView("none");
-    setSelected(null);
+    setIsDeleting(true);
+    try {
+      await api.delete(`/transacciones/${selected.id}`);
+      await queryClient.invalidateQueries({ queryKey: ['transacciones', USUARIO_ID] });
+      await queryClient.invalidateQueries({ queryKey: ['balance', USUARIO_ID] });
+      setView("none");
+      setSelected(null);
+    } catch (error) {
+      console.error(error);
+      alert('No se pudo eliminar la transacción.');
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   return (
