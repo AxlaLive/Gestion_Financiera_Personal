@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +36,7 @@ export function EditTransactionDialog({
   const [description, setDescription] = useState(transaction?.description ?? "");
 
   // Update local state when transaction prop changes
-  useState(() => {
+  useEffect(() => {
     if (transaction) {
       setAmount(transaction.amount.toString());
       setDate(transaction.date);
