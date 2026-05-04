@@ -13,15 +13,11 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // Cambié /api/** por /** para cubrir todo por si acaso
-                        .allowedOrigins(
-                            "http://localhost:5173", 
-                            "http://localhost:8080",
-                            "https://gestion-financiera-personal.vercel.app" // <--- LA PIEZA CLAVE
-                        )
+                registry.addMapping("/**")
+                        .allowedOriginPatterns("*")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(true); // Recomendado para sesiones o cookies futuras
+                        .allowCredentials(true);
             }
         };
     }

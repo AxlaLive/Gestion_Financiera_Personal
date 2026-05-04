@@ -8,10 +8,18 @@ import { useBalance } from '@/hooks/use-balance';
 import { useTransacciones } from '@/hooks/use-transacciones';
 import type { Transaccion } from '@/lib/api-types';
 
+function normalizeCategoryName(name: string) {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
 function mapTransaccion(t: Transaccion) {
+  const categoryName = t.categoria?.nombre ?? t.categoriaNombre ?? 'otros';
   return {
     id: String(t.id),
-    category: t.categoria?.nombre?.toLowerCase() ?? 'otros',
+    category: normalizeCategoryName(categoryName),
     label: t.tipo === 'INGRESO' ? 'Ingreso' : 'Gasto',
     description: t.descripcion || '',
     amount: t.monto,

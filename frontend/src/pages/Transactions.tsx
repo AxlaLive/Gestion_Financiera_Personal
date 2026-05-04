@@ -111,22 +111,29 @@ export default function Transactions() {
   const { data: categorias = [] } = useCategorias(USUARIO_ID);
   const [query, setQuery] = useState("");
 
+  const normalizeCategoryName = (name: string) =>
+    name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+
   const transactions = useMemo<Transaction[]>(
     () =>
       transaccionesBackend.map((transaccion: Transaccion) => {
-        const normalizedCategory = (transaccion.categoria?.nombre ?? "otros").toLowerCase();
+        const categoryName = transaccion.categoria?.nombre ?? transaccion.categoriaNombre ?? 'otros';
+        const normalizedCategory = normalizeCategoryName(categoryName);
         const category = CATEGORIES.some((category) => category.id === normalizedCategory)
           ? (normalizedCategory as CategoryId)
-          : "otros";
+          : 'otros';
 
         return {
           id: String(transaccion.id),
-          type: transaccion.tipo === "INGRESO" ? ("income" as TransactionType) : ("expense" as TransactionType),
+          type: transaccion.tipo === 'INGRESO' ? ('income' as TransactionType) : ('expense' as TransactionType),
           amount: transaccion.monto,
           date: transaccion.fecha,
-          time: "00:00",
+          time: '00:00',
           category,
-          description: transaccion.descripcion ?? "",
+          description: transaccion.descripcion ?? '',
         };
       }),
     [transaccionesBackend]
@@ -181,15 +188,24 @@ export default function Transactions() {
     if (!selected) return;
     setIsSaving(true);
 
+    const normalizeCategoryName = (name: string) =>
+      name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+    const expectedTipo = selected.type === 'income' ? 'INGRESO' : 'GASTO';
     const categoriaSeleccionada = categorias.find(
-      (cat) => cat.nombre?.toLowerCase() === patch.category.toLowerCase()
+      (cat) =>
+        cat.tipo === expectedTipo &&
+        normalizeCategoryName(cat.nombre ?? '') === patch.category
     );
 
     const payload: Record<string, unknown> = {
       monto: patch.amount,
       descripcion: patch.description,
       fecha: patch.date,
-      tipo: selected.type === 'income' ? 'INGRESO' : 'GASTO',
+      tipo: expectedTipo,
       usuario: { id: USUARIO_ID },
     };
 
