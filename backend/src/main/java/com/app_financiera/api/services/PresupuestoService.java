@@ -100,8 +100,10 @@ public class PresupuestoService {
 
         // Calcular gasto actual del mes en esta categoría
         LocalDate hoy = LocalDate.now();
-        Double gastoActual = transaccionRepository.sumGastosPorCategoriaYMes(usuario, categoria, 
-                                                                            hoy.getYear(), hoy.getMonthValue());
+        java.time.YearMonth periodo = java.time.YearMonth.of(hoy.getYear(), hoy.getMonthValue());
+        LocalDate desde = periodo.atDay(1);
+        LocalDate hasta = periodo.plusMonths(1).atDay(1);
+        Double gastoActual = transaccionRepository.sumGastosPorCategoriaYMes(usuario, categoria, desde, hasta);
         
         gastoActual = gastoActual != null ? gastoActual : 0.0;
 
@@ -139,8 +141,11 @@ public class PresupuestoService {
         return presupuestos.stream()
                 .map(presupuesto -> {
                     LocalDate hoy = LocalDate.now();
+                    java.time.YearMonth periodo = java.time.YearMonth.of(hoy.getYear(), hoy.getMonthValue());
+                    LocalDate desde = periodo.atDay(1);
+                    LocalDate hasta = periodo.plusMonths(1).atDay(1);
                     Double gastoActual = transaccionRepository.sumGastosPorCategoriaYMes(
-                        usuario, presupuesto.getCategoria(), hoy.getYear(), hoy.getMonthValue()
+                        usuario, presupuesto.getCategoria(), desde, hasta
                     );
                     gastoActual = gastoActual != null ? gastoActual : 0.0;
 

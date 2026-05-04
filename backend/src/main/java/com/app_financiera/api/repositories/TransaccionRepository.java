@@ -25,9 +25,9 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
     @Query("SELECT COALESCE(SUM(t.monto), 0) FROM Transaccion t " +
            "WHERE t.usuario = :usuario AND t.categoria = :categoria " +
            "AND t.tipo = 'GASTO' " +
-           "AND YEAR(t.fecha) = :year AND MONTH(t.fecha) = :month")
-    Double sumGastosPorCategoriaYMes(@Param("usuario") Usuario usuario, 
+           "AND t.fecha >= :desde AND t.fecha < :hasta")
+    Double sumGastosPorCategoriaYMes(@Param("usuario") Usuario usuario,
                                       @Param("categoria") Categoria categoria,
-                                      @Param("year") int year,
-                                      @Param("month") int month);
+                                      @Param("desde") java.time.LocalDate desde,
+                                      @Param("hasta") java.time.LocalDate hasta);
 }

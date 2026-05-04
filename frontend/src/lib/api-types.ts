@@ -22,7 +22,9 @@ export interface Transaccion {
   fecha: string; // "yyyy-MM-dd" (LocalDate en Java)
   tipo: 'INGRESO' | 'GASTO';
   usuario: { id: number };
-  categoria: { id: number; nombre?: string };
+  categoria?: { id: number; nombre?: string };
+  categoriaId?: number;
+  categoriaNombre?: string;
 }
 
 export interface BalanceResponse {
