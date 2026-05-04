@@ -23,7 +23,7 @@ function mapTransaccion(t: Transaccion) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const usuarioGuardado = JSON.parse(localStorage.getItem('usuario') || '{}');
-  const USUARIO_ID = usuarioGuardado.id ?? 1;
+  const USUARIO_ID = usuarioGuardado?.id as number | undefined;
   const [showBalance, setShowBalance] = useState(true);
 
   const { data: balance, isLoading: loadingBalance, isError: errorBalance } = useBalance(USUARIO_ID);
