@@ -1,11 +1,13 @@
 import type { Transaccion, BalanceResponse, Categoria } from './api-types';
 
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '')
-  ?? (window.location.hostname === 'localhost' ? 'http://localhost:8080/api' : 'https://gestion-financiera-personal-mi90.onrender.com/api');
-const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '');
+// Forzamos la URL de Render directamente
+const API_BASE_URL = 'https://gestion-financiera-personal-mi90.onrender.com/api';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  // Aseguramos que el path comience con /
+  const url = `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  
+  const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   });
