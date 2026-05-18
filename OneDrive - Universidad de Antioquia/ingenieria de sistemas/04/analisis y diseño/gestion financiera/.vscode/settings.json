@@ -1,0 +1,9 @@
+{
+    "java.compile.nullAnalysis.mode": "automatic",
+    "chat.tools.terminal.autoApprove": {
+        "/^New-Item -ItemType Directory -Path \"C:\\\\temp\" -Force$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
