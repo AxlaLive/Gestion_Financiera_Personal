@@ -11,6 +11,7 @@ import AddIncome from "./pages/AddIncome";
 import Budgets from "./pages/Budgets";
 import Transactions from "./pages/Transactions";
 import NotFound from "./pages/NotFound";
+import ReportesGastos from "./pages/ReportesGastos";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,15 @@ const App = () => (
           <Route path="/budgets" element={<Budgets />} />
           <Route path="/transacciones" element={<Transactions />} />
           <Route path="/transactions" element={<Transactions />} />
+          <Route
+            path="/reportes"
+            element={
+              (() => {
+                const usuario = localStorage.getItem('usuario');
+                return usuario ? <ReportesGastos /> : <Navigate to="/login" replace />;
+              })()
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Bell, Eye, EyeOff, ArrowDownLeft, ArrowUpRight, Plus, TrendingUp, Loader2 } from 'lucide-react';
+import { Bell, Eye, EyeOff, ArrowDownLeft, ArrowUpRight, Plus, TrendingUp, Loader2, PieChart } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { TransactionCard } from '@/components/TransactionCard';
 import { BottomNav } from '@/components/BottomNav';
@@ -56,12 +56,23 @@ export default function Dashboard() {
             <p className="text-sm opacity-90">Bienvenido de nuevo</p>
             <h1 className="text-lg font-bold">{usuarioGuardado.nombre ?? 'Usuario'}</h1>
           </div>
-          <button
-            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20"
-            aria-label="Notificaciones"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              className="relative flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20"
+              aria-label="Notificaciones"
+            >
+              <Bell className="h-5 w-5" />
+            </button>
+
+            <button
+              onClick={() => navigate('/reportes')}
+              className="hidden md:inline-flex items-center gap-2 rounded-lg border border-input bg-transparent px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+              aria-label="Ver reportes gráficos"
+            >
+              <PieChart className="h-4 w-4" />
+              Ver reportes gráficos
+            </button>
+          </div>
         </div>
 
         <div className="text-center">
