@@ -1,11 +1,10 @@
-import type { Transaccion, BalanceResponse, Categoria } from './api-types';
+import type { Transaccion, BalanceResponse, Categoria, GastoCategoriaDTO } from './api-types';
 
-// Forzamos la URL de Render directamente
-const API_BASE_URL = 'https://gestion-financiera-personal-mi90.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   // Aseguramos que el path comience con /
-  const url = `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  const url = `${API_BASE_URL.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
   
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json' },
@@ -41,4 +40,8 @@ export function crearTransaccion(transaccion: Transaccion): Promise<Transaccion>
     method: 'POST',
     body: JSON.stringify(transaccion),
   });
+}
+
+export function fetchResumenGastosMesActual(usuarioId: number): Promise<GastoCategoriaDTO[]> {
+  return request<GastoCategoriaDTO[]>(`/transacciones/usuario/${usuarioId}/resumen-gastos`);
 }

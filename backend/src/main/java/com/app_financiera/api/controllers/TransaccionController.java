@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.app_financiera.api.entities.Transaccion;
 import com.app_financiera.api.entities.Usuario;
+import com.app_financiera.api.dto.GastoCategoriaDTO;
 import com.app_financiera.api.services.TransaccionService;
 import com.app_financiera.api.services.TransaccionService.TransaccionDTO;
 import com.app_financiera.api.repositories.UsuarioRepository;
@@ -61,6 +62,21 @@ public class TransaccionController {
             // Si no hay transacciones, retorna lista vacía (estado vacío soportado - HU-09)
             return ResponseEntity.ok(historial);
             
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/usuario/{usuarioId}/resumen-gastos")
+    public ResponseEntity<?> obtenerResumenGastosMesActual(@PathVariable Long usuarioId) {
+        try {
+            Usuario usuario = usuarioRepository.findById(usuarioId)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            List<GastoCategoriaDTO> resumen =
+                    transaccionService.obtenerResumenGastosMesActual(usuario);
+
+            return ResponseEntity.ok(resumen);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
