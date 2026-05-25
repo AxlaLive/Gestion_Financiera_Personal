@@ -1,6 +1,8 @@
 package com.app_financiera.api.services;
 
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Optional;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.app_financiera.api.entities.Transaccion;
 import com.app_financiera.api.entities.Usuario;
+import com.app_financiera.api.dto.GastoCategoriaDTO;
 import com.app_financiera.api.repositories.TransaccionRepository;
 
 import jakarta.transaction.Transactional;
@@ -54,6 +57,17 @@ public class TransaccionService {
     // Método para listar (HU-09: Historial cronológico) [cite: 72, 73]
     public List<Transaccion> listarHistorial(Usuario usuario) {
         return transaccionRepository.findByUsuarioOrderByFechaDescIdDesc(usuario);
+    }
+
+    public List<GastoCategoriaDTO> obtenerResumenGastosMesActual(Usuario usuario) {
+        if (usuario == null || usuario.getId() == null) {
+            return Collections.emptyList();
+        }
+
+        LocalDate desde = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
+        LocalDate hasta = desde.with(TemporalAdjusters.firstDayOfNextMonth());
+
+        return transaccionRepository.obtenerResumenGastosPorCategoriaMes(usuario, desde, hasta);
     }
 
     // Método para obtener DTO de historial (HU-09: Evitar lazy loading) [cite: 72, 73]
@@ -103,6 +117,7 @@ public class TransaccionService {
         public Long getCategoriaId() { return categoriaId; }
         public String getCategoriaNombre() { return categoriaNombre; }
     }
+
     @Transactional
     public Transaccion actualizarTransaccion(Long id, Transaccion actualizacion) {
         // HU-08: Edición de transacciones con validación de pertenencia y reglas de negocio [cite: 33, 40]

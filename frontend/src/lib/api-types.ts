@@ -27,6 +27,11 @@ export interface Transaccion {
   categoriaNombre?: string;
 }
 
+export interface GastoCategoriaDTO {
+  categoriaNombre: string;
+  montoTotal: number;
+}
+
 export interface BalanceResponse {
   monto: number;
   color: string;   // "Verde Esmeralda" | "Rojo Alerta" | "Gris" | "Gris/Negro"

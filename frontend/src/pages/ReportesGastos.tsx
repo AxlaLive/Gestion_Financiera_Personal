@@ -2,7 +2,7 @@ import React, { useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { PieChart as PieIcon, Utensils, Car } from 'lucide-react';
-import { useTransacciones } from '@/hooks/use-transacciones';
+import { useResumenGastosMesActual } from '@/hooks/use-transacciones';
 
 // Colores institucionales y mapping por categoría
 const CATEGORY_COLORS: Record<string, string> = {
@@ -25,24 +25,9 @@ export default function ReportesGastos() {
   const navigate = useNavigate();
   const usuarioGuardado = JSON.parse(localStorage.getItem('usuario') || '{}');
   const USUARIO_ID = usuarioGuardado?.id as number | undefined;
-  const { data: transacciones = [], isLoading } = useTransacciones(USUARIO_ID);
+  const { data: resumenGastos = [], isLoading } = useResumenGastosMesActual(USUARIO_ID);
 
   const [periodLabel] = useState(() => `Mes actual: ${monthLabelFor()}`);
-
-  // Filtrar solo gastos del mes actual
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1; // 1..12
-
-  const gastosDelMes = useMemo(() => {
-    return (transacciones || []).filter(t => t.tipo === 'GASTO' && t.fecha && (() => {
-      const parts = String(t.fecha).split('-');
-      if (parts.length < 2) return false;
-      const y = Number(parts[0]);
-      const m = Number(parts[1]);
-      return y === year && m === month;
-    })());
-  }, [transacciones, year, month]);
 
   // Demo data mode via query param ?demo=1 to showcase Scenario 1
   const demo = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1';
@@ -52,19 +37,26 @@ export default function ReportesGastos() {
     { name: 'Transporte', value: 100000 },
   ];
 
-  // Agrupar por categoría
+  // Agrupar por categoría usando datos del backend
   const grouped = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const t of gastosDelMes) {
-      const cat = t.categoria?.nombre ?? t.categoriaNombre ?? 'Gastos varios';
-      map.set(cat, (map.get(cat) || 0) + (t.monto ?? 0));
-    }
-    const arr = Array.from(map.entries()).map(([name, value]) => ({ name, value }));
-    return arr;
-  }, [gastosDelMes]);
+    return resumenGastos.map((item) => ({
+      name: item.categoriaNombre || 'Gastos varios',
+      value: item.montoTotal ?? 0,
+    }));
+  }, [resumenGastos]);
 
   // If demo mode and no real grouped data, override
   const effectiveGrouped = demo ? demoGrouped : grouped;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen p-6 bg-background">
+        <div className="max-w-5xl mx-auto rounded-xl border bg-card p-6 text-center">
+          <div className="text-lg font-semibold">Cargando resumen de gastos...</div>
+        </div>
+      </div>
+    );
+  }
 
   const total = effectiveGrouped.reduce((s, g) => s + g.value, 0);
 
