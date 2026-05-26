@@ -1,9 +1,10 @@
-import { Home, FileText, TrendingUp, MoreHorizontal } from 'lucide-react';
+import { Home, FileText, TrendingUp, Bug, MoreHorizontal } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 
 const navItems = [
   { to: '/dashboard', icon: Home, label: 'Inicio' },
   { to: '/transactions', icon: FileText, label: 'Transacciones' },
+  { to: '/gastos-hormiga', icon: Bug, label: 'Hormiga' },
   { to: '/statistics', icon: TrendingUp, label: 'Estadísticas' },
   { to: '/more', icon: MoreHorizontal, label: 'Más' },
 ];

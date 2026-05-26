@@ -1,9 +1,18 @@
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
+type SupportedCurrency = 'COP' | 'USD';
+
+const LOCALE_BY_CURRENCY: Record<SupportedCurrency, string> = {
+  COP: 'es-CO',
+  USD: 'en-US',
+};
+
+export function formatCurrency(amount: number, currency: SupportedCurrency = 'COP'): string {
+  const locale = LOCALE_BY_CURRENCY[currency] ?? 'es-CO';
+  const fractionDigits = currency === 'COP' ? 0 : 2;
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    currency,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   }).format(amount);
 }
 
