@@ -10,6 +10,7 @@ import AddExpense from "./pages/AddExpense";
 import AddIncome from "./pages/AddIncome";
 import Budgets from "./pages/Budgets";
 import Transactions from "./pages/Transactions";
+import GastosHormiga from "./pages/GastosHormiga";
 import NotFound from "./pages/NotFound";
 import ReportesGastos from "./pages/ReportesGastos";
 
@@ -40,6 +41,7 @@ const App = () => (
               })()
             }
           />
+          <Route path="/gastos-hormiga" element={<GastosHormiga />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

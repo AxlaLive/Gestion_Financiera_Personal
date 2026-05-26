@@ -6,6 +6,7 @@ export interface Usuario {
   password?: string;
   nombre: string;
   moneda: string;
+  gastoHormigaLimite?: number | null;
 }
 
 export interface Categoria {
@@ -25,6 +26,7 @@ export interface Transaccion {
   categoria?: { id: number; nombre?: string };
   categoriaId?: number;
   categoriaNombre?: string;
+  esGastoHormiga?: boolean;
 }
 
 export interface GastoCategoriaDTO {
@@ -36,4 +38,20 @@ export interface BalanceResponse {
   monto: number;
   color: string;   // "Verde Esmeralda" | "Rojo Alerta" | "Gris" | "Gris/Negro"
   mensaje: string;
+}
+
+// HU-21: Gastos hormiga
+export interface GastoHormigaResumen {
+  limite: number | null;
+  acumuladoMes: number;
+  cantidadTransacciones: number;
+  totalGastosMes: number;
+  porcentajeDelTotal: number;
+  recomendacion: string;
+}
+
+export interface GastoHormigaHistoricoMes {
+  mes: string; // "YYYY-MM"
+  total: number;
+  cantidad: number;
 }
