@@ -46,4 +46,15 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
             @Param("usuario") Usuario usuario,
             @Param("desde") LocalDate desde,
             @Param("hasta") LocalDate hasta);
+    
+    // Para HU-16: Obtener total de gastos (egresos) para un período específico [cite: Tarea 86]
+    // Utilizado para calcular tendencias mensuales comparativas
+    @Query("SELECT COALESCE(SUM(t.monto), 0) FROM Transaccion t " +
+           "WHERE t.usuario = :usuario " +
+           "AND t.tipo = 'GASTO' " +
+           "AND t.fecha >= :desde " +
+           "AND t.fecha < :hasta")
+    Double sumGastosPorPeriodo(@Param("usuario") Usuario usuario,
+                               @Param("desde") LocalDate desde,
+                               @Param("hasta") LocalDate hasta);
 }
