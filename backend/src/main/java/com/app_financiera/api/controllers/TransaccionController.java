@@ -21,6 +21,7 @@ import com.app_financiera.api.entities.Transaccion;
 import com.app_financiera.api.entities.Usuario;
 import com.app_financiera.api.dto.GastoCategoriaDTO;
 import com.app_financiera.api.dto.TendenciasDTO;
+import com.app_financiera.api.services.ReporteService;
 import com.app_financiera.api.services.TransaccionService;
 import com.app_financiera.api.services.TransaccionService.TransaccionDTO;
 import com.app_financiera.api.repositories.UsuarioRepository;
@@ -31,6 +32,9 @@ public class TransaccionController {
 
     @Autowired
     private TransaccionService transaccionService;
+
+    @Autowired
+    private ReporteService reporteService;
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -80,6 +84,32 @@ public class TransaccionController {
                     transaccionService.obtenerResumenGastosMesActual(usuario);
 
             return ResponseEntity.ok(resumen);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/exportar")
+    public ResponseEntity<?> exportarReporte(
+            @RequestParam Long usuarioId,
+            @RequestParam int month,
+            @RequestParam int year,
+            @RequestParam String format) {
+        try {
+            Usuario usuario = usuarioRepository.findById(usuarioId)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            byte[] archivo = reporteService.generarReporteMes(usuario, month, year, format);
+            String extension = format.equalsIgnoreCase("pdf") ? "pdf" : "xlsx";
+            String contentType = format.equalsIgnoreCase("pdf")
+                    ? "application/pdf"
+                    : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            String fileName = String.format("reporte-%d-%02d.%s", year, month, extension);
+
+            return ResponseEntity.ok()
+                    .header("Content-Type", contentType)
+                    .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
+                    .body(archivo);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
