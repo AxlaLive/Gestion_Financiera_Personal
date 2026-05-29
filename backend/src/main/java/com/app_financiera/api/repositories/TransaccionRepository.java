@@ -17,6 +17,16 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
     // Para el historial cronológico (HU-09) [cite: 72]
     List<Transaccion> findByUsuarioOrderByFechaDescIdDesc(Usuario usuario);
 
+    @Query("SELECT t FROM Transaccion t " +
+           "WHERE t.usuario = :usuario " +
+           "AND t.fecha >= :desde " +
+           "AND t.fecha < :hasta " +
+           "ORDER BY t.fecha DESC, t.id DESC")
+    List<Transaccion> findByUsuarioAndFechaBetween(
+            @Param("usuario") Usuario usuario,
+            @Param("desde") java.time.LocalDate desde,
+            @Param("hasta") java.time.LocalDate hasta);
+
     // Para el balance: Filtramos por tipo (INGRESO/GASTO) directamente en la DB [cite: 93, 98]
     List<Transaccion> findByUsuarioAndTipo(Usuario usuario, String tipo);
 
@@ -46,4 +56,15 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
             @Param("usuario") Usuario usuario,
             @Param("desde") LocalDate desde,
             @Param("hasta") LocalDate hasta);
+    
+    // Para HU-16: Obtener total de gastos (egresos) para un período específico [cite: Tarea 86]
+    // Utilizado para calcular tendencias mensuales comparativas
+    @Query("SELECT COALESCE(SUM(t.monto), 0) FROM Transaccion t " +
+           "WHERE t.usuario = :usuario " +
+           "AND t.tipo = 'GASTO' " +
+           "AND t.fecha >= :desde " +
+           "AND t.fecha < :hasta")
+    Double sumGastosPorPeriodo(@Param("usuario") Usuario usuario,
+                               @Param("desde") LocalDate desde,
+                               @Param("hasta") LocalDate hasta);
 }

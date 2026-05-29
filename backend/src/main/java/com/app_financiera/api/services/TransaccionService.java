@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Optional;
+import java.time.YearMonth;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import com.app_financiera.api.entities.Transaccion;
 import com.app_financiera.api.entities.Usuario;
 import com.app_financiera.api.dto.GastoCategoriaDTO;
+import com.app_financiera.api.dto.TendenciasDTO;
 import com.app_financiera.api.repositories.TransaccionRepository;
 
 import jakarta.transaction.Transactional;
@@ -194,5 +196,97 @@ public class TransaccionService {
 
     // 3. Ejecutar eliminación
     transaccionRepository.delete(transaccion); 
-}
+    }
+
+    /**
+     * Calcula las tendencias de gastos comparando mes actual vs mes anterior
+     * Implementación de Tarea 86 - HU-16 "Gráfico de tendencias"
+     * 
+     * Criterios de aceptación:
+     * 1. Agrupa transacciones por mes (año-mes)
+     * 2. Calcula total de gastos mes actual y mes anterior
+     * 3. Fórmula de diferencia: ((Mes Actual - Mes Anterior) / Mes Anterior) * 100
+     * 4. Maneja correctamente división por cero (mes anterior = 0)
+     * 5. Escenario 2: Sin datos previos, retorna hasData=false con mensaje descriptivo
+     * 
+     * @param usuario Usuario para el cual se calculan las tendencias
+     * @param fechaDesde Fecha de inicio opcional (si no se proporciona, usa mes actual)
+     * @param fechaHasta Fecha de fin opcional (si no se proporciona, usa mes actual)
+     * @return TendenciasDTO con comparativa de gastos
+     */
+    public TendenciasDTO calcularTendenciasGastos(Usuario usuario, LocalDate fechaDesde, LocalDate fechaHasta) {
+        // 1. Validación de usuario [cite: 17, 40]
+        if (usuario == null || usuario.getId() == null) {
+            throw new RuntimeException("Usuario no válido para calcular tendencias");
+        }
+
+        // 2. Determinar período de análisis
+        // Si no se proporcionan fechas, usamos el mes actual
+        LocalDate mesActualDesde, mesActualHasta;
+        
+        if (fechaDesde == null || fechaHasta == null) {
+            // Usar mes actual por defecto
+            mesActualDesde = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
+            mesActualHasta = mesActualDesde.with(TemporalAdjusters.firstDayOfNextMonth());
+        } else {
+            // Usar las fechas proporcionadas, ajustando al mes completo
+            mesActualDesde = fechaDesde.with(TemporalAdjusters.firstDayOfMonth());
+            mesActualHasta = fechaHasta.with(TemporalAdjusters.lastDayOfMonth()).plusDays(1);
+        }
+
+        // 3. Calcular mes anterior (un mes atrás del mes actual)
+        LocalDate mesAnteriorDesde = mesActualDesde.minusMonths(1);
+        LocalDate mesAnteriorHasta = mesActualDesde; // Hasta el primer día del mes actual
+
+        // 4. Consultar gastos totales de ambos períodos [cite: Tarea 86]
+        Double gastoMesActual = transaccionRepository.sumGastosPorPeriodo(
+                usuario, 
+                mesActualDesde, 
+                mesActualHasta
+        );
+        
+        Double gastoMesAnterior = transaccionRepository.sumGastosPorPeriodo(
+                usuario, 
+                mesAnteriorDesde, 
+                mesAnteriorHasta
+        );
+
+        // 5. Convertir valores null a 0.0 (caso de sin datos)
+        if (gastoMesActual == null) {
+            gastoMesActual = 0.0;
+        }
+        if (gastoMesAnterior == null) {
+            gastoMesAnterior = 0.0;
+        }
+
+        // 6. Formatear nombres de meses para la respuesta
+        YearMonth mesActualYM = YearMonth.from(mesActualDesde);
+        YearMonth mesAnteriorYM = YearMonth.from(mesAnteriorDesde);
+        
+        String mesActualStr = mesActualYM.toString(); // Formato: YYYY-MM
+        String mesAnteriorStr = mesAnteriorYM.toString(); // Formato: YYYY-MM
+
+        // 7. Escenario 2: Sin datos del mes anterior [cite: Escenario 2, Tarea 86]
+        if (gastoMesAnterior == 0.0 || gastoMesAnterior.isNaN()) {
+            return new TendenciasDTO(mesActualStr, gastoMesActual);
+        }
+
+        // 8. Calcular porcentaje de diferencia: ((Mes Actual - Mes Anterior) / Mes Anterior) * 100
+        // Caso de división por cero ya manejado arriba [cite: Requerimiento 3, Tarea 86]
+        Double porcentajeDiferencia = ((gastoMesActual - gastoMesAnterior) / gastoMesAnterior) * 100;
+
+        // 9. Manejo de valores especiales (infinito, NaN)
+        if (porcentajeDiferencia.isInfinite() || porcentajeDiferencia.isNaN()) {
+            porcentajeDiferencia = 0.0;
+        }
+
+        // 10. Retornar respuesta con datos completos (Caso 1) [cite: Requerimiento 2, Tarea 86]
+        return new TendenciasDTO(
+                mesActualStr, 
+                gastoMesActual, 
+                mesAnteriorStr, 
+                gastoMesAnterior, 
+                porcentajeDiferencia
+        );
+    }
 }

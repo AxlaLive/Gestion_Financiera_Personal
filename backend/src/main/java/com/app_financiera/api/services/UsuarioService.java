@@ -3,6 +3,7 @@ package com.app_financiera.api.services;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,9 @@ public class UsuarioService {
 
     @Autowired
     private CategoriaRepository categoriaRepository;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     /**
      * Regla HU-01: Registro de Cuenta [cite: 2]
@@ -44,6 +48,9 @@ public class UsuarioService {
         if (usuario.getMoneda() == null) {
             usuario.setMoneda("COP"); // Valor predeterminado según análisis
         }
+
+        // Hash password before saving
+        usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
 
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
 
@@ -104,7 +111,7 @@ public class UsuarioService {
     public Usuario login(String correo, String password) {
         Usuario usuario = usuarioRepository.findByCorreo(correo)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        if (!usuario.getPassword().equals(password)) {
+        if (!passwordEncoder.matches(password, usuario.getPassword())) {
             throw new RuntimeException("Contraseña incorrecta");
         }
         return usuario;
