@@ -13,6 +13,7 @@ import Transactions from "./pages/Transactions";
 import GastosHormiga from "./pages/GastosHormiga";
 import NotFound from "./pages/NotFound";
 import ReportesGastos from "./pages/ReportesGastos";
+import ExportReport from "./pages/ExportReport";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,15 @@ const App = () => (
               (() => {
                 const usuario = localStorage.getItem('usuario');
                 return usuario ? <ReportesGastos /> : <Navigate to="/login" replace />;
+              })()
+            }
+          />
+          <Route
+            path="/export-report"
+            element={
+              (() => {
+                const usuario = localStorage.getItem('usuario');
+                return usuario ? <ExportReport /> : <Navigate to="/login" replace />;
               })()
             }
           />
