@@ -5,16 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-context";
+import api from "../api/axios";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ForgotPasswordPage() {
-  const { requestPasswordReset } = useAuth();
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [devUrl, setDevUrl] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
 
   const emailError = !email.trim()
     ? "El correo es requerido"
@@ -22,25 +22,25 @@ export default function ForgotPasswordPage() {
       ? "Correo inválido"
       : "";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
+    setServerError("");
     if (!email.trim() || emailError) return;
 
-    const result = requestPasswordReset(email.trim());
-
-    // CA-03: mensaje genérico independientemente del resultado real
-    setSubmitted(true);
-
-    if (result.ok) {
-      // En producción esto se enviaría por correo. Aquí mostramos el enlace
-      // para poder probar el flujo desde la misma interfaz.
-      setDevUrl(result.url);
-      toast.success("Enlace de recuperación generado", {
-        description: "Tiene una vigencia de 30 minutos.",
+    setLoading(true);
+    try {
+      await api.post('/auth/forgot-password', { correo: email.trim() });
+      setSubmitted(true);
+      toast.success("Solicitud recibida", {
+        description: "Si el correo está registrado, recibirás un enlace para recuperarlo.",
       });
-    } else {
-      setDevUrl(null);
+    } catch (error) {
+      setServerError(
+        "No se pudo procesar la solicitud. Verifica tu conexión o intenta más tarde.",
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,39 +83,33 @@ export default function ForgotPasswordPage() {
                   <p className="mt-1 text-sm text-red-600">{emailError}</p>
                 )}
               </div>
+
+              {serverError && (
+                <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+                  {serverError}
+                </div>
+              )}
+
               <Button
                 type="submit"
+                disabled={loading}
                 className="h-14 w-full rounded-xl bg-emerald-600 text-base font-semibold text-white shadow-lg hover:bg-emerald-700"
               >
-                Recuperar contraseña
+                {loading ? "Enviando..." : "Recuperar contraseña"}
               </Button>
             </form>
           ) : (
             <div className="space-y-4">
               <div className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-900">
-                Si el correo <strong>{email}</strong> está registrado, recibirás un enlace de
-                recuperación con vigencia de 30 minutos.
+                Si el correo <strong>{email}</strong> está registrado, recibirás un enlace de recuperación con vigencia de 30 minutos.
               </div>
-              {devUrl && (
-                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-xs text-slate-600">
-                  <p className="mb-2 font-semibold text-slate-700">
-                    Enlace de prueba (en producción llegaría por correo):
-                  </p>
-                  <a
-                    href={devUrl}
-                    className="break-all font-mono text-emerald-700 underline hover:text-emerald-800"
-                  >
-                    {devUrl}
-                  </a>
-                </div>
-              )}
               <Button
                 variant="outline"
                 onClick={() => {
                   setSubmitted(false);
-                  setDevUrl(null);
                   setEmail("");
                   setTouched(false);
+                  setServerError("");
                 }}
                 className="h-12 w-full"
               >

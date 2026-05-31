@@ -49,6 +49,22 @@ bun run dev
 
 El servidor de desarrollo inicia en `http://localhost:5173`.
 
+Copia `frontend/.env.example` a `frontend/.env.local` y ajusta `VITE_API_BASE_URL` si el backend no está en el puerto 8080.
+
+### Despliegue en Render
+
+- Frontend: https://gestion-financiera-perso.onrender.com  
+- Backend: https://gestion-financiera-personal-mi90.onrender.com  
+
+Guía detallada con variables de entorno: [DEPLOY_RENDER.md](./DEPLOY_RENDER.md)
+
+| Servicio | Variable | Valor |
+|----------|----------|--------|
+| Frontend | `VITE_API_BASE_URL` | `https://gestion-financiera-personal-mi90.onrender.com/api` |
+| Backend | `APP_CORS_ALLOWED_ORIGINS` | `https://gestion-financiera-perso.onrender.com` |
+| Backend | `APP_FRONTEND_URL` | `https://gestion-financiera-perso.onrender.com` |
+| Backend | `SPRING_DATASOURCE_*`, `JWT_SECRET` | ver DEPLOY_RENDER.md |
+
 ## Funcionalidades principales
 
 - Registro e inicio de sesion de usuarios

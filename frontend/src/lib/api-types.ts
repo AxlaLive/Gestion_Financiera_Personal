@@ -34,6 +34,11 @@ export interface GastoCategoriaDTO {
   montoTotal: number;
 }
 
+export interface GastoPorCategoriaDTO {
+  categoria: string;
+  monto: number;
+}
+
 export interface BalanceResponse {
   monto: number;
   color: string;   // "Verde Esmeralda" | "Rojo Alerta" | "Gris" | "Gris/Negro"

@@ -9,10 +9,26 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "sonner";
+import api from "@/api/axios";
+import {
+  AUTH_SESSION_CLEARED_EVENT,
+  isBackendJwtToken,
+  SESSION_STORAGE_KEY,
+} from "@/lib/api-config";
 
-const SESSION_KEY = "fin.auth.session.v1";
+const SESSION_KEY = SESSION_STORAGE_KEY;
 const USERS_KEY = "fin.auth.users.v1";
 const RESET_KEY = "fin.auth.reset.v1";
+
+interface StoredSession {
+  id: number;
+  nombre: string;
+  correo: string;
+  moneda?: string;
+  token: string;
+  issuedAt: number;
+  lastActivity: number;
+}
 
 // 15 minutos de inactividad antes de cerrar sesión automáticamente (CA-05)
 const INACTIVITY_MS = 15 * 60 * 1000;
@@ -22,13 +38,6 @@ const RESET_TTL_MS = 30 * 60 * 1000;
 export interface AuthUser {
   name: string;
   email: string;
-}
-
-interface StoredSession {
-  user: AuthUser;
-  token: string;
-  issuedAt: number;
-  lastActivity: number;
 }
 
 interface StoredUser {
@@ -56,9 +65,19 @@ export type PasswordResetOutcome =
   | { ok: true }
   | { ok: false; reason: "invalid" | "weak" };
 
+export interface BackendSessionUser {
+  id: number;
+  nombre: string;
+  correo: string;
+  moneda?: string;
+  token: string;
+}
+
 interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
+  setBackendSession: (usuario: BackendSessionUser) => void;
   signIn: (email: string, password: string) => { ok: boolean; error?: string };
   signUp: (name: string, email: string, password: string) => { ok: boolean; error?: string };
   signOut: (reason?: "manual" | "inactivity") => void;
@@ -111,25 +130,67 @@ function genToken() {
   );
 }
 
+function parseStoredSession(raw: unknown): StoredSession | null {
+  if (!raw || typeof raw !== "object") return null;
+  const data = raw as Record<string, unknown>;
+  const id = Number(data.id);
+  const token = typeof data.token === "string" ? data.token : "";
+  const correo = typeof data.correo === "string" ? data.correo : "";
+  const nombre = typeof data.nombre === "string" ? data.nombre : "";
+  if (!id || !token || !correo || !isBackendJwtToken(token)) return null;
+
+  const now = Date.now();
+  return {
+    id,
+    nombre,
+    correo,
+    moneda: typeof data.moneda === "string" ? data.moneda : undefined,
+    token,
+    issuedAt: typeof data.issuedAt === "number" ? data.issuedAt : now,
+    lastActivity: typeof data.lastActivity === "number" ? data.lastActivity : now,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<StoredSession | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cargar sesión persistida
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(SESSION_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as StoredSession;
-      // Si excede el límite de inactividad, no restaurar
-      if (Date.now() - parsed.lastActivity > INACTIVITY_MS) {
-        localStorage.removeItem(SESSION_KEY);
-        return;
+    (async () => {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (!raw) return;
+        const parsed = parseStoredSession(JSON.parse(raw));
+        if (!parsed) {
+          localStorage.removeItem(SESSION_KEY);
+          return;
+        }
+        if (Date.now() - parsed.lastActivity > INACTIVITY_MS) {
+          localStorage.removeItem(SESSION_KEY);
+          return;
+        }
+        setSession(parsed);
+      } catch {
+        // ignore malformed storage
+      } finally {
+        setIsLoading(false);
       }
-      setSession(parsed);
-    } catch {
-      // ignore
-    }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const onSessionCleared = () => {
+      setSession(null);
+      setIsLoading(false);
+      if (inactivityTimer.current) {
+        clearTimeout(inactivityTimer.current);
+        inactivityTimer.current = null;
+      }
+    };
+    window.addEventListener(AUTH_SESSION_CLEARED_EVENT, onSessionCleared);
+    return () => window.removeEventListener(AUTH_SESSION_CLEARED_EVENT, onSessionCleared);
   }, []);
 
   const persistSession = useCallback((s: StoredSession | null) => {
@@ -141,21 +202,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const setBackendSession = useCallback<AuthContextValue["setBackendSession"]>(
+    (usuario) => {
+      const now = Date.now();
+      const s: StoredSession = {
+        id: usuario.id,
+        nombre: usuario.nombre,
+        correo: usuario.correo,
+        moneda: usuario.moneda,
+        token: usuario.token,
+        issuedAt: now,
+        lastActivity: now,
+      };
+      setSession(s);
+      persistSession(s);
+    },
+    [persistSession],
+  );
+
   const signOut = useCallback<AuthContextValue["signOut"]>(
     (reason = "manual") => {
+      const token = session?.token;
+
       setSession(null);
+      setIsLoading(false);
       persistSession(null);
       if (inactivityTimer.current) {
         clearTimeout(inactivityTimer.current);
         inactivityTimer.current = null;
       }
+
+      if (token && isBackendJwtToken(token)) {
+        void api
+          .post("/auth/logout", null, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .catch(() => {
+            // Ignore logout failures; local state already cleared.
+          });
+      }
+
       if (reason === "inactivity") {
         toast.warning("Tu sesión se cerró por inactividad", {
           description: "Por seguridad, vuelve a iniciar sesión para continuar.",
         });
       }
     },
-    [persistSession],
+    [persistSession, session],
   );
 
   // Temporizador de inactividad — CA-05
@@ -209,7 +302,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const newUser: StoredUser = { name: fallbackName, email, password };
       writeUsers([...users, newUser]);
       const s: StoredSession = {
-        user: { name: newUser.name, email: newUser.email },
+        id: Date.now(),
+        nombre: newUser.name,
+        correo: newUser.email,
         token: genToken(),
         issuedAt: Date.now(),
         lastActivity: Date.now(),
@@ -222,7 +317,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: false, error: "Correo o contraseña incorrectos" };
     }
     const s: StoredSession = {
-      user: { name: found.name, email: found.email },
+      id: Date.now(),
+      nombre: found.name,
+      correo: found.email,
       token: genToken(),
       issuedAt: Date.now(),
       lastActivity: Date.now(),
@@ -240,7 +337,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const newUser: StoredUser = { name, email, password };
     writeUsers([...users, newUser]);
     const s: StoredSession = {
-      user: { name, email },
+      id: Date.now(),
+      nombre: name,
+      correo: email,
       token: genToken(),
       issuedAt: Date.now(),
       lastActivity: Date.now(),
@@ -290,8 +389,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      user: session?.user ?? null,
-      isAuthenticated: !!session,
+      user: session
+        ? {
+            name: session.nombre,
+            email: session.correo,
+          }
+        : null,
+      isAuthenticated: !!session && isBackendJwtToken(session.token),
+      isLoading,
+      setBackendSession,
       signIn,
       signUp,
       signOut,
@@ -299,7 +405,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       validateResetToken,
       resetPassword,
     }),
-    [session, signIn, signUp, signOut, requestPasswordReset, validateResetToken, resetPassword],
+    [
+      session,
+      isLoading,
+      setBackendSession,
+      signIn,
+      signUp,
+      signOut,
+      requestPasswordReset,
+      validateResetToken,
+      resetPassword,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
