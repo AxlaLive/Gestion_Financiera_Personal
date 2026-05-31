@@ -1,19 +1,25 @@
 package com.app_financiera.api.services;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Optional;
-import java.time.YearMonth;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.app_financiera.api.entities.Transaccion;
 import com.app_financiera.api.entities.Usuario;
+import com.app_financiera.api.dto.ComparativaMensualDTO;
+import com.app_financiera.api.dto.ComparativaMensualResponseDTO;
 import com.app_financiera.api.dto.GastoCategoriaDTO;
+import com.app_financiera.api.dto.GastosPorCategoriaDTO;
 import com.app_financiera.api.dto.TendenciasDTO;
 import com.app_financiera.api.repositories.TransaccionRepository;
 
@@ -288,5 +294,89 @@ public class TransaccionService {
                 gastoMesAnterior, 
                 porcentajeDiferencia
         );
+    }
+
+    public List<GastosPorCategoriaDTO> obtenerGastosPorCategoriaMesActual(Usuario usuario) {
+        if (usuario == null || usuario.getId() == null) {
+            return Collections.emptyList();
+        }
+
+        LocalDate desde = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
+        LocalDate hasta = desde.with(TemporalAdjusters.firstDayOfNextMonth());
+
+        List<GastoCategoriaDTO> resumen = transaccionRepository.obtenerResumenGastosPorCategoriaMes(usuario, desde, hasta);
+
+        return resumen.stream()
+                .map(item -> new GastosPorCategoriaDTO(
+                        item.getCategoriaNombre(),
+                        item.getMontoTotal() != null ? BigDecimal.valueOf(item.getMontoTotal()) : BigDecimal.ZERO
+                ))
+                .collect(Collectors.toList());
+    }
+
+    public ComparativaMensualResponseDTO obtenerComparativaMensual(Usuario usuario, LocalDate fechaDesde, LocalDate fechaHasta) {
+        if (usuario == null || usuario.getId() == null) {
+            throw new RuntimeException("Usuario no válido para obtener la comparativa mensual");
+        }
+
+        LocalDate actualDesde = fechaDesde != null ? fechaDesde : LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
+        LocalDate actualHastaInclusivo = fechaHasta != null ? fechaHasta : actualDesde.with(TemporalAdjusters.lastDayOfMonth());
+
+        if (actualHastaInclusivo.isBefore(actualDesde)) {
+            throw new RuntimeException("La fecha fin no puede ser anterior a la fecha inicio");
+        }
+
+        LocalDate actualHasta = actualHastaInclusivo.plusDays(1);
+        LocalDate anteriorDesde = actualDesde.minusMonths(1);
+        LocalDate anteriorHasta = actualHasta.minusMonths(1);
+
+        List<Transaccion> gastosActuales = transaccionRepository.findByUsuarioAndFechaBetween(usuario, actualDesde, actualHasta);
+        List<Transaccion> gastosAnteriores = transaccionRepository.findByUsuarioAndFechaBetween(usuario, anteriorDesde, anteriorHasta);
+
+        var actualPorSemana = gastosActuales.stream()
+                .filter(t -> t.getTipo() != null && t.getTipo().equalsIgnoreCase("GASTO"))
+                .collect(Collectors.groupingBy(
+                        t -> etiquetaSemana(actualDesde, t.getFecha()),
+                        Collectors.summingDouble(Transaccion::getMonto)
+                ));
+
+        var anteriorPorSemana = gastosAnteriores.stream()
+                .filter(t -> t.getTipo() != null && t.getTipo().equalsIgnoreCase("GASTO"))
+                .collect(Collectors.groupingBy(
+                        t -> etiquetaSemana(anteriorDesde, t.getFecha()),
+                        Collectors.summingDouble(Transaccion::getMonto)
+                ));
+
+        int maxSemana = Stream.concat(actualPorSemana.keySet().stream(), anteriorPorSemana.keySet().stream())
+                .map(label -> Integer.parseInt(label.replace("Semana ", "")))
+                .max(Integer::compareTo)
+                .orElse(1);
+
+        List<ComparativaMensualDTO> comparativa = IntStream.rangeClosed(1, maxSemana)
+                .mapToObj(semana -> new ComparativaMensualDTO(
+                        "Semana " + semana,
+                        actualPorSemana.getOrDefault("Semana " + semana, 0.0),
+                        anteriorPorSemana.getOrDefault("Semana " + semana, 0.0)
+                ))
+                .collect(Collectors.toList());
+
+        boolean hasPreviousData = anteriorPorSemana.values().stream().anyMatch(value -> value > 0.0);
+        String mensaje = hasPreviousData ? null : "Se requiere un mes adicional de datos para generar la comparativa";
+
+        return new ComparativaMensualResponseDTO(
+                comparativa,
+                hasPreviousData,
+                mensaje,
+                actualDesde,
+                actualHastaInclusivo,
+                anteriorDesde,
+                anteriorHasta.minusDays(1)
+        );
+    }
+
+    private String etiquetaSemana(LocalDate periodoInicio, LocalDate fecha) {
+        long diasDesdeInicio = java.time.temporal.ChronoUnit.DAYS.between(periodoInicio, fecha);
+        int semana = (int) (diasDesdeInicio / 7) + 1;
+        return "Semana " + semana;
     }
 }

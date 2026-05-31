@@ -43,6 +43,23 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
                                       @Param("desde") LocalDate desde,
                                       @Param("hasta") LocalDate hasta);
 
+    List<Transaccion> findByUsuarioAndTipoAndMontoLessThanAndFechaBetween(
+            Usuario usuario,
+            String tipo,
+            Double monto,
+            LocalDate desde,
+            LocalDate hasta);
+
+    @Query("SELECT COALESCE(SUM(t.monto), 0) FROM Transaccion t " +
+           "WHERE t.usuario = :usuario " +
+           "AND t.tipo = 'GASTO' " +
+           "AND t.monto < :limite " +
+           "AND t.fecha >= :desde AND t.fecha < :hasta")
+    Double sumGastosHormigaPorPeriodo(@Param("usuario") Usuario usuario,
+                                      @Param("limite") Double limite,
+                                      @Param("desde") LocalDate desde,
+                                      @Param("hasta") LocalDate hasta);
+
     @Query("SELECT new com.app_financiera.api.dto.GastoCategoriaDTO(" +
            "t.categoria.nombre, SUM(t.monto)) " +
            "FROM Transaccion t " +

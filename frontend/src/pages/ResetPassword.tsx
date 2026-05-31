@@ -5,13 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-context";
+import api from "../api/axios";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
-  const { validateResetToken, resetPassword } = useAuth();
 
   const [status, setStatus] = useState<"checking" | "valid" | "invalid">("checking");
   const [reason, setReason] = useState<"missing" | "expired" | "used" | null>(null);
@@ -20,6 +19,7 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -27,17 +27,22 @@ export default function ResetPasswordPage() {
       setReason("missing");
       return;
     }
-    const result = validateResetToken(token);
-    if (result.ok) {
-      setStatus("valid");
-      setEmail(result.email);
-    } else {
-      setStatus("invalid");
-      setReason(result.reason);
-    }
-  }, [token, validateResetToken]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+    setStatus("checking");
+    api.get("/auth/reset-password/validate", { params: { token } })
+      .then((response) => {
+        setStatus("valid");
+        setEmail(response.data.email);
+      })
+      .catch((error) => {
+        const data = error?.response?.data;
+        const reasonValue = data?.reason ?? "missing";
+        setStatus("invalid");
+        setReason(reasonValue);
+      });
+  }, [token]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (password.length < 6) {
@@ -48,19 +53,29 @@ export default function ResetPasswordPage() {
       setError("Las contraseñas no coinciden");
       return;
     }
-    const result = resetPassword(token, password);
-    if (!result.ok) {
-      setError(
-        result.reason === "weak"
-          ? "La contraseña no cumple los requisitos mínimos"
-          : "El enlace no es válido o ha expirado",
-      );
-      return;
+
+    setLoading(true);
+    try {
+      await api.post("/auth/reset-password", { token, password });
+      toast.success("Contraseña actualizada", {
+        description: "Ya puedes iniciar sesión con tu nueva contraseña.",
+      });
+      navigate("/login", { replace: true });
+    } catch (error) {
+      const data = error?.response?.data;
+      const message = data?.error || "El enlace no es válido o ha expirado";
+      if (message.toLowerCase().includes("expir")) {
+        setStatus("invalid");
+        setReason("expired");
+      } else if (message.toLowerCase().includes("usado")) {
+        setStatus("invalid");
+        setReason("used");
+      } else {
+        setError(message);
+      }
+    } finally {
+      setLoading(false);
     }
-    toast.success("Contraseña actualizada", {
-      description: "Ya puedes iniciar sesión con tu nueva contraseña.",
-    });
-    navigate("/login", { replace: true });
   };
 
   return (

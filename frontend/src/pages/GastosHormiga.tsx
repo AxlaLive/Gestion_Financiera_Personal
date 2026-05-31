@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bug, Loader2, Settings } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { Button } from '@/components/ui/button';
+import { ProfileMenu } from '@/components/ProfileMenu';
 import { TransactionCard } from '@/components/TransactionCard';
 import { BottomNav } from '@/components/BottomNav';
 import { AntExpenseLimitDrawer } from '@/components/AntExpenseLimitDrawer';
@@ -98,17 +99,20 @@ export default function GastosHormiga() {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <h1 className="text-lg font-bold">Gastos hormiga</h1>
-          {tieneLimite ? (
-            <button
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Editar límite de gasto hormiga"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/20"
-            >
-              <Settings className="h-5 w-5" />
-            </button>
-          ) : (
-            <div className="h-9 w-9" aria-hidden="true" />
-          )}
+          <div className="flex items-center gap-2">
+            {tieneLimite ? (
+              <button
+                onClick={() => setDrawerOpen(true)}
+                aria-label="Editar límite de gasto hormiga"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/20"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+            ) : (
+              <div className="h-9 w-9" aria-hidden="true" />
+            )}
+            <ProfileMenu />
+          </div>
         </div>
         {tieneLimite && (
           <p className="mt-4 text-sm opacity-90">

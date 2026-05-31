@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Bell, Eye, EyeOff, ArrowDownLeft, ArrowUpRight, Plus, TrendingUp, Loader2, PieChart } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
+import { ProfileMenu } from '@/components/ProfileMenu';
 import { TransactionCard } from '@/components/TransactionCard';
 import { BottomNav } from '@/components/BottomNav';
 import { useBalance } from '@/hooks/use-balance';
@@ -72,6 +73,8 @@ export default function Dashboard() {
               <PieChart className="h-4 w-4" />
               Ver reportes gráficos
             </button>
+
+            <ProfileMenu />
           </div>
         </div>
 

@@ -16,8 +16,16 @@ interface RouteGuardProps {
  * de ruta re-evalúa la sesión activa.
  */
 export function RouteGuard({ children, pathname }: RouteGuardProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const isPublic = PUBLIC_ROUTES.has(pathname);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Cargando...</p>
+      </div>
+    );
+  }
 
   // Si no está autenticado y la ruta no es pública, redirige a login
   if (!isAuthenticated && !isPublic) {

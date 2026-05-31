@@ -1,5 +1,5 @@
 // MOCK temporal para HU-21 (Gastos hormiga) mientras el backend implementa
-// los endpoints. Desactivar con: VITE_MOCK_ANT_EXPENSES=false en .env.local
+// los endpoints. Activar con: VITE_MOCK_ANT_EXPENSES=true en .env.local
 import type {
   GastoHormigaResumen,
   GastoHormigaHistoricoMes,
