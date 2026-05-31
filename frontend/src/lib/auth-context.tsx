@@ -155,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<StoredSession | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const signOutRef = useRef<AuthContextValue["signOut"]>(() => {});
 
   // Cargar sesión persistida
   useEffect(() => {
@@ -251,13 +252,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [persistSession, session],
   );
 
+  signOutRef.current = signOut;
+
   // Temporizador de inactividad — CA-05
   useEffect(() => {
     if (!session) return;
 
-    const reset = () => {
+    const scheduleInactivityTimeout = () => {
       if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
-      inactivityTimer.current = setTimeout(() => signOut("inactivity"), INACTIVITY_MS);
+      inactivityTimer.current = setTimeout(
+        () => signOutRef.current("inactivity"),
+        INACTIVITY_MS,
+      );
+    };
+
+    const recordActivity = () => {
+      scheduleInactivityTimeout();
       setSession((prev) => {
         if (!prev) return prev;
         const next = { ...prev, lastActivity: Date.now() };
@@ -280,17 +290,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // throttle: máximo una actualización cada 30s
       if (now - last < 30_000) return;
       last = now;
-      reset();
+      recordActivity();
     };
 
-    reset(); // inicia el timer
+    scheduleInactivityTimeout();
     events.forEach((e) => window.addEventListener(e, handler, { passive: true }));
     return () => {
       events.forEach((e) => window.removeEventListener(e, handler));
       if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.token, signOut, persistSession]);
+  }, [session?.token, persistSession]);
 
   const signIn = useCallback<AuthContextValue["signIn"]>((email, password) => {
     const users = readUsers();
