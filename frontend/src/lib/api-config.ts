@@ -1,5 +1,11 @@
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
+const DEFAULT_API_BASE_URL = 'http://localhost:8080/api';
+
+/** URL base del backend (incluye `/api`). Vite inyecta `VITE_API_BASE_URL` en build. */
+export const API_BASE_URL = (() => {
+  const fromEnv = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, '');
+  return DEFAULT_API_BASE_URL;
+})();
 
 export const SESSION_STORAGE_KEY = 'usuario';
 
