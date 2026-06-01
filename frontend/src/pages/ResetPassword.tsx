@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import api from "../api/axios";
+import { resetPasswordChecks, validateResetPassword } from "@/lib/password-policy";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -42,11 +43,15 @@ export default function ResetPasswordPage() {
       });
   }, [token]);
 
+  const checks = resetPasswordChecks(password);
+  const passwordIsValid = Object.values(checks).every(Boolean);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+    const policyError = validateResetPassword(password);
+    if (policyError) {
+      setError(policyError);
       return;
     }
     if (password !== confirm) {
@@ -128,7 +133,7 @@ export default function ResetPasswordPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="h-12 px-10 text-base"
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 10 caracteres"
                   />
                   <button
                     type="button"
@@ -139,6 +144,13 @@ export default function ResetPasswordPage() {
                     {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                <ul className="mt-2 space-y-1 text-xs text-slate-500" aria-live="polite">
+                  <li className={checks.minLength ? "text-emerald-600" : ""}>Al menos 10 caracteres</li>
+                  <li className={checks.hasUpper ? "text-emerald-600" : ""}>Una mayúscula</li>
+                  <li className={checks.hasLower ? "text-emerald-600" : ""}>Una minúscula</li>
+                  <li className={checks.hasNumber ? "text-emerald-600" : ""}>Un número</li>
+                  <li className={checks.hasSpecial ? "text-emerald-600" : ""}>Un carácter especial</li>
+                </ul>
               </div>
 
               <div>
@@ -166,9 +178,10 @@ export default function ResetPasswordPage() {
 
               <Button
                 type="submit"
+                disabled={loading || !passwordIsValid || password !== confirm}
                 className="h-14 w-full rounded-xl bg-emerald-600 text-base font-semibold text-white shadow-lg hover:bg-emerald-700"
               >
-                Actualizar contraseña
+                {loading ? "Guardando..." : "Actualizar contraseña"}
               </Button>
             </form>
           )}
