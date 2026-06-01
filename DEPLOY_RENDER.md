@@ -23,6 +23,18 @@ En **Render → tu servicio backend → Environment**:
 | `APP_CORS_ALLOWED_ORIGINS` | `https://gestion-financiera-perso.onrender.com` |
 | `APP_FRONTEND_URL` | `https://gestion-financiera-perso.onrender.com` |
 
+Para **recuperación de contraseña por correo** (si no configuras esto, el enlace solo sale en los logs del backend):
+
+| Variable | Valor (ejemplo Gmail) |
+|----------|------------------------|
+| `SPRING_MAIL_HOST` | `smtp.gmail.com` |
+| `SPRING_MAIL_PORT` | `587` |
+| `SPRING_MAIL_USERNAME` | tu correo Gmail |
+| `SPRING_MAIL_PASSWORD` | contraseña de aplicación de Google (no la contraseña normal) |
+| `APP_MAIL_FROM` | mismo correo que `SPRING_MAIL_USERNAME` |
+
+Guía paso a paso: [RECUPERACION_CONTRASENA.md](./RECUPERACION_CONTRASENA.md)
+
 Opcional (recomendado en producción):
 
 | Variable | Valor |
