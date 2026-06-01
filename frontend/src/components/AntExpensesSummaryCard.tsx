@@ -48,7 +48,9 @@ export function AntExpensesSummaryCard({ resumen }: AntExpensesSummaryCardProps)
       </div>
 
       <p className="mt-3 text-xs text-muted-foreground">
-        Límite configurado: <span className="font-semibold text-foreground">{formatCurrency(limite)}</span>
+        Tope por compra: gastos menores a{' '}
+        <span className="font-semibold text-foreground">{formatCurrency(limite)}</span>
+        {' '}se clasifican como hormiga
       </p>
 
       {resumen.recomendacion && (
