@@ -103,7 +103,7 @@ export default function GastosHormiga() {
             {tieneLimite ? (
               <button
                 onClick={() => setDrawerOpen(true)}
-                aria-label="Editar límite de gasto hormiga"
+                aria-label="Editar tope por compra de gasto hormiga"
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/20"
               >
                 <Settings className="h-5 w-5" />
@@ -204,13 +204,13 @@ function EmptyState({ onConfigurar }: { onConfigurar: () => void }) {
       </div>
 
       <p className="mt-6 text-sm text-muted-foreground">
-        Define el monto a partir del cual queremos avisarte:
+        Indica cuánto puede costar como máximo una sola compra para considerarla gasto hormiga:
       </p>
       <Button
         onClick={onConfigurar}
         className="mt-3 h-12 w-full rounded-2xl text-base font-semibold"
       >
-        Configurar mi límite
+        Configurar tope por compra
       </Button>
     </div>
   );

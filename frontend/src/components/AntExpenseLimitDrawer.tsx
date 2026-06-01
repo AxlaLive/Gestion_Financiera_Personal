@@ -82,16 +82,16 @@ export function AntExpenseLimitDrawer({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{esEdicion ? 'Modifica tu límite' : 'Tu límite de gasto hormiga'}</DrawerTitle>
+          <DrawerTitle>{esEdicion ? 'Modifica el tope por compra' : 'Tope por compra hormiga'}</DrawerTitle>
           <DrawerDescription>
-            Marcaremos como hormiga cualquier gasto menor a este monto.
+            Cada gasto menor a este monto se cuenta como gasto hormiga. No es un tope mensual, sino el valor máximo de una sola compra pequeña.
           </DrawerDescription>
         </DrawerHeader>
 
         <div className="px-5 pb-4">
           <div className="rounded-2xl bg-secondary p-5">
             <p className="text-center text-xs uppercase tracking-wide text-muted-foreground">
-              Monto límite
+              Máximo por transacción
             </p>
             <div className="mt-2 flex items-center justify-center gap-1">
               <span className="text-2xl font-semibold text-muted-foreground">$</span>
@@ -102,7 +102,7 @@ export function AntExpenseLimitDrawer({
                 onChange={handleAmountChange}
                 placeholder="0"
                 className="w-full max-w-[200px] bg-transparent text-center text-4xl font-bold text-foreground outline-none placeholder:text-muted-foreground/40"
-                aria-label="Monto del límite de gasto hormiga"
+                aria-label="Monto máximo por transacción para clasificar gasto hormiga"
                 aria-invalid={!!amountError}
                 aria-describedby={amountError ? 'limit-error' : undefined}
                 autoFocus

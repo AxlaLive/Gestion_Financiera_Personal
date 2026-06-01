@@ -50,6 +50,13 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
             LocalDate desde,
             LocalDate hasta);
 
+    List<Transaccion> findByUsuarioAndTipoAndMontoGreaterThanEqualAndFechaBetweenOrderByMontoDesc(
+            Usuario usuario,
+            String tipo,
+            Double montoMinimo,
+            LocalDate desde,
+            LocalDate hasta);
+
     @Query("SELECT COALESCE(SUM(t.monto), 0) FROM Transaccion t " +
            "WHERE t.usuario = :usuario " +
            "AND t.tipo = 'GASTO' " +
