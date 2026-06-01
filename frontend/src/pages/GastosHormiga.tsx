@@ -32,6 +32,7 @@ export default function GastosHormiga() {
   const USUARIO_ID = usuarioGuardado.id ?? 1;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [months, setMonths] = useState(6);
 
   const {
     data: resumen,
@@ -39,7 +40,7 @@ export default function GastosHormiga() {
     isError: errorResumen,
   } = useAntExpensesSummary(USUARIO_ID);
   const { data: lista = [], isLoading: loadingLista } = useAntExpensesList(USUARIO_ID);
-  const { data: historico = [], isLoading: loadingHistorico } = useAntExpensesHistory(USUARIO_ID, 6);
+  const { data: historico = [], isLoading: loadingHistorico } = useAntExpensesHistory(USUARIO_ID, months);
 
   const tieneLimite = resumen?.limite != null;
   const transaccionesMapeadas = lista.map(mapTransaccion);
@@ -133,7 +134,29 @@ export default function GastosHormiga() {
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : historico.length > 0 ? (
-              <AntExpensesChart data={historico} />
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-sm font-semibold text-foreground">Evolución de gastos hormiga</div>
+                  <div className="flex flex-wrap gap-2">
+                    {[3, 6, 12].map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setMonths(option)}
+                        className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                          months === option
+                            ? 'border-primary bg-primary text-white'
+                            : 'border-border bg-card text-muted-foreground hover:border-primary/70'
+                        }`}
+                      >
+                        {option}M
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <AntExpensesChart data={historico} meses={months} />
+              </div>
             ) : null}
 
             <section aria-labelledby="lista-titulo">
