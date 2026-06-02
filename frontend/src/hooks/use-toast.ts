@@ -174,7 +174,9 @@ function useToast() {
         listeners.splice(index, 1);
       }
     };
-  }, [state]);
+    // Run once on mount/unmount to subscribe the render callback
+    // Avoid re-subscribing when `state` changes which caused duplicated listeners
+  }, []);
 
   return {
     ...state,

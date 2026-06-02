@@ -1,5 +1,5 @@
 // MOCK temporal para HU-21 (Gastos hormiga) mientras el backend implementa
-// los endpoints. Desactivar con: VITE_MOCK_ANT_EXPENSES=false en .env.local
+// los endpoints. Activar con: VITE_MOCK_ANT_EXPENSES=true en .env.local
 import type {
   GastoHormigaResumen,
   GastoHormigaHistoricoMes,
@@ -28,6 +28,12 @@ const TRANSACCIONES_MOCK: Transaccion[] = [
   { id: 15, monto: 2500, descripcion: 'Botella de agua', fecha: '2026-05-13', tipo: 'GASTO', usuario: { id: 1 }, categoria: { id: 1, nombre: 'Comida' } },
 ];
 
+// Gastos del mes que no son hormiga (monto >= tope configurado)
+const GASTOS_GRANDES_MOCK: Transaccion[] = [
+  { id: 100, monto: 320000, descripcion: 'Bicicleta', fecha: '2026-05-10', tipo: 'GASTO', usuario: { id: 1 }, categoria: { id: 6, nombre: 'Ocio' } },
+  { id: 101, monto: 180000, descripcion: 'Mercado del mes', fecha: '2026-05-05', tipo: 'GASTO', usuario: { id: 1 }, categoria: { id: 1, nombre: 'Comida' } },
+];
+
 const HISTORICO_MOCK: GastoHormigaHistoricoMes[] = [
   { mes: '2025-12', total: 72000, cantidad: 18 },
   { mes: '2026-01', total: 85000, cantidad: 22 },
@@ -44,18 +50,44 @@ function leerLimite(): number | null {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
-function generarRecomendacion(porcentaje: number, acumulado: number): string {
-  if (porcentaje < 5) {
-    return 'Vas muy bien. Tus gastos hormiga están controlados y representan una pequeña parte de tu gasto total.';
+function etiquetaTransaccion(t: Transaccion): string {
+  return t.descripcion?.trim() || t.categoria?.nombre || 'un gasto grande';
+}
+
+function formatearPesos(valor: number): string {
+  return valor.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+}
+
+function generarRecomendacion(limite: number, cantidad: number, acumulado: number, porcentaje: number): string {
+  if (acumulado === 0) {
+    return 'No se encontraron gastos hormiga este mes. Buen trabajo manteniendo el control.';
   }
-  if (porcentaje < 15) {
-    return 'Tus gastos hormiga están en un rango saludable. Sigue prestando atención a las pequeñas compras del día a día.';
+
+  const gastosGrandes = GASTOS_GRANDES_MOCK.filter((t) => t.monto >= limite)
+    .sort((a, b) => b.monto - a.monto);
+
+  for (const gasto of gastosGrandes) {
+    if (acumulado < gasto.monto) continue;
+
+    const etiqueta = etiquetaTransaccion(gasto);
+    const veces = Math.floor(acumulado / gasto.monto);
+    if (veces >= 2) {
+      return `Este mes acumulaste ${formatearPesos(acumulado)} en ${cantidad} gastos hormiga. Con ese dinero podrías haber cubierto ${veces} veces «${etiqueta}» (${formatearPesos(gasto.monto)}).`;
+    }
+    return `Este mes acumulaste ${formatearPesos(acumulado)} en ${cantidad} gastos hormiga. Eso equivale a lo que gastaste en «${etiqueta}» (${formatearPesos(gasto.monto)}).`;
   }
-  if (porcentaje < 25) {
-    const formatted = acumulado.toLocaleString('es-CO');
-    return `Considera revisar estos gastos pequeños. Suman $${formatted} este mes y podrías destinarlos a ahorro.`;
+
+  if (gastosGrandes.length > 0) {
+    const mayor = gastosGrandes[0];
+    const faltante = mayor.monto - acumulado;
+    return `Llevas ${formatearPesos(acumulado)} en ${cantidad} gastos hormiga. Te faltan ${formatearPesos(faltante)} para igualar tu mayor gasto del mes: «${etiquetaTransaccion(mayor)}» (${formatearPesos(mayor.monto)}).`;
   }
-  return 'Alerta: tus gastos hormiga representan una parte significativa de tu gasto total. Es momento de revisar tus hábitos.';
+
+  if (porcentaje >= 30) {
+    return `Tus gastos hormiga representan un ${Math.round(porcentaje)}% del gasto total del mes. Revisa las pequeñas compras frecuentes.`;
+  }
+
+  return 'Tus gastos hormiga están bajo control. Sigue atento a los pequeños desembolsos para mantener ese ahorro.';
 }
 
 function calcularResumen(limite: number | null): GastoHormigaResumen {
@@ -80,7 +112,7 @@ function calcularResumen(limite: number | null): GastoHormigaResumen {
     cantidadTransacciones: hormigas.length,
     totalGastosMes: TOTAL_GASTOS_MES_MOCK,
     porcentajeDelTotal: porcentaje,
-    recomendacion: generarRecomendacion(porcentaje, acumulado),
+    recomendacion: generarRecomendacion(limite, hormigas.length, acumulado, porcentaje),
   };
 }
 

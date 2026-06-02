@@ -1,8 +1,14 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { parseISO, subMonths, isAfter } from 'date-fns';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+<<<<<<< HEAD
 import { PieChart as PieIcon, Utensils, Car, Download } from 'lucide-react';
 import { useResumenGastosMesActual } from '@/hooks/use-transacciones';
+=======
+import { PieChart as PieIcon, Utensils, Car } from 'lucide-react';
+import { useTransacciones } from '@/hooks/use-transacciones';
+>>>>>>> origin/main
 
 // Colores institucionales y mapping por categoría
 const CATEGORY_COLORS: Record<string, string> = {
@@ -14,8 +20,52 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Gastos varios': '#95A5A6',
 };
 
-function monthLabelFor(date = new Date()) {
-  return new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(date);
+const FALLBACK_COLORS = ['#6366F1', '#EC4899', '#F59E0B', '#14B8A6', '#0EA5E9', '#A855F7'];
+
+type PeriodRange = '1M' | '3M' | '6M' | '12M';
+
+const RANGE_OPTIONS: { value: PeriodRange; label: string }[] = [
+  { value: '1M', label: 'Último mes' },
+  { value: '3M', label: 'Últimos 3 meses' },
+  { value: '6M', label: 'Últimos 6 meses' },
+  { value: '12M', label: 'Último año' },
+];
+
+function getRangeMonths(value: PeriodRange) {
+  switch (value) {
+    case '3M':
+      return 3;
+    case '6M':
+      return 6;
+    case '12M':
+      return 12;
+    default:
+      return 1;
+  }
+}
+
+function getRangeLabel(value: PeriodRange) {
+  switch (value) {
+    case '3M':
+      return 'Últimos 3 meses';
+    case '6M':
+      return 'Últimos 6 meses';
+    case '12M':
+      return 'Último año';
+    default:
+      return 'Último mes';
+  }
+}
+
+function getCategoryColor(name: string, index: number) {
+  return CATEGORY_COLORS[name] ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+}
+
+function isDateInRange(isoDate: string, months: number) {
+  const date = parseISO(isoDate);
+  if (Number.isNaN(date.getTime())) return false;
+  const start = subMonths(new Date(), months);
+  return isAfter(date, start) || date.getTime() === start.getTime();
 }
 
 // CustomTooltip removed from top-level; defined inside component to access refs
@@ -25,28 +75,38 @@ export default function ReportesGastos() {
   const navigate = useNavigate();
   const usuarioGuardado = JSON.parse(localStorage.getItem('usuario') || '{}');
   const USUARIO_ID = usuarioGuardado?.id as number | undefined;
-  const { data: resumenGastos = [], isLoading } = useResumenGastosMesActual(USUARIO_ID);
+  const { data: transacciones = [], isLoading } = useTransacciones(USUARIO_ID);
+  const [range, setRange] = useState<PeriodRange>('1M');
 
-  const [periodLabel] = useState(() => `Mes actual: ${monthLabelFor()}`);
+  const periodLabel = useMemo(() => getRangeLabel(range), [range]);
 
   // Demo data mode via query param ?demo=1 to showcase Scenario 1
-  const demo = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1';
+  const demo =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('demo') === '1';
 
   const demoGrouped = [
     { name: 'Alimentación', value: 200000 },
     { name: 'Transporte', value: 100000 },
   ];
 
-  // Agrupar por categoría usando datos del backend
+  // Agrupar por categoría usando todas las transacciones disponibles y un rango seleccionable
   const grouped = useMemo(() => {
-    return resumenGastos.map((item) => ({
-      name: item.categoriaNombre || 'Gastos varios',
-      value: item.montoTotal ?? 0,
-    }));
-  }, [resumenGastos]);
+    const groupedMap = new Map<string, number>();
+    const months = getRangeMonths(range);
+
+    transacciones
+      .filter((item) => item.tipo === 'GASTO' && isDateInRange(item.fecha, months))
+      .forEach((item) => {
+        const name = item.categoria?.nombre || item.categoriaNombre || 'Gastos varios';
+        groupedMap.set(name, (groupedMap.get(name) ?? 0) + item.monto);
+      });
+
+    return Array.from(groupedMap.entries()).map(([name, value]) => ({ name, value }));
+  }, [transacciones, range]);
 
   // If demo mode and no real grouped data, override
-  const effectiveGrouped = demo ? demoGrouped : grouped;
+  const effectiveGrouped = demo && grouped.length === 0 ? demoGrouped : grouped;
 
   if (isLoading) {
     return (
@@ -165,7 +225,25 @@ export default function ReportesGastos() {
             <h2 className="text-2xl font-bold">Distribución de gastos</h2>
             <div className="mt-4">
               <label className="text-sm opacity-90">Período</label>
-              <div className="mt-2 rounded-md border bg-card p-3 text-sm">{periodLabel}</div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {RANGE_OPTIONS.map((option) => {
+                  const active = option.value === range;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setRange(option.value)}
+                      className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                        active
+                          ? 'border-primary bg-primary text-white'
+                          : 'border-border bg-card text-muted-foreground hover:border-primary/70'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -176,6 +254,8 @@ export default function ReportesGastos() {
               <div className="text-sm opacity-90">Visualización tipo dona</div>
             </div>
 
+            <div className="mb-3 text-sm font-medium text-foreground">{periodLabel}</div>
+
             <div style={{ width: '100%', height: 260 }} ref={chartRef}>
               <ResponsiveContainer>
                 <PieChart>
@@ -185,10 +265,9 @@ export default function ReportesGastos() {
                     </Pie>
                   ) : (
                     <Pie data={chartData} dataKey="value" nameKey="name" innerRadius={70} outerRadius={100} startAngle={90} endAngle={-270}>
-                      {chartData.map((entry, index) => {
-                        const color = CATEGORY_COLORS[entry.name] ?? CATEGORY_COLORS['Gastos varios'];
-                        return <Cell key={`c-${index}`} fill={color} />;
-                      })}
+                      {chartData.map((entry, index) => (
+                        <Cell key={`c-${index}`} fill={getCategoryColor(entry.name, index)} />
+                      ))}
                     </Pie>
                   )}
 
@@ -224,20 +303,18 @@ export default function ReportesGastos() {
             <div className="rounded-xl border bg-card p-4">
               <h3 className="text-sm font-semibold mb-3">Leyenda</h3>
               <div className="space-y-3">
-                {Object.entries(CATEGORY_COLORS).map(([name, color]) => {
-                  // calcular porcentaje si existe
-                  const found = chartData.find(d => d.name === name);
-                  const pct = found && total ? `${found.percent.toFixed(1)}%` : (grouped.length ? '0.0%' : '—');
+                {effectiveGrouped.map((entry, index) => {
+                  const color = getCategoryColor(entry.name, index);
+                  const pct = total ? `${((entry.value / total) * 100).toFixed(1)}%` : '—';
 
-                  // icon mapping básico
-                  const Icon = name === 'Alimentación' ? Utensils : name === 'Transporte' ? Car : null;
+                  const Icon = entry.name === 'Alimentación' ? Utensils : entry.name === 'Transporte' ? Car : null;
 
                   return (
-                    <div key={name} className="flex items-center justify-between">
+                    <div key={entry.name} className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div style={{ width: 14, height: 14, background: color, borderRadius: 3 }} />
                         {Icon ? <Icon className="h-4 w-4 text-muted-foreground" /> : <div className="h-4 w-4" />}
-                        <div className="text-sm">{name}</div>
+                        <div className="text-sm">{entry.name}</div>
                       </div>
                       <div className="text-sm opacity-90">{pct}</div>
                     </div>

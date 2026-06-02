@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/axios';
+import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +32,7 @@ const SPECIAL_CHAR_REGEX = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/;
 
 export default function Signup() {
   const navigate = useNavigate();
+  const { setBackendSession } = useAuth();
   const [form, setForm] = useState<FormState>({
     name: '',
     email: '',
@@ -120,13 +122,17 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      const response = await api.post('/usuarios/registro', {
+      await api.post('/usuarios/registro', {
         nombre: form.name,
         correo: form.email,
         password: form.password,
       });
-      localStorage.removeItem('usuario');
-      localStorage.setItem('usuario', JSON.stringify(response.data));
+      const loginResponse = await api.post('/usuarios/login', {
+        correo: form.email,
+        password: form.password,
+      });
+      const { token, usuario } = loginResponse.data;
+      setBackendSession({ ...usuario, token });
       toast.success('Cuenta creada exitosamente', {
         description: 'Bienvenido a tu panel financiero',
       });

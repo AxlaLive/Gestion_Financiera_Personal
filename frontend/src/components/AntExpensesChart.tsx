@@ -10,6 +10,7 @@ import type { GastoHormigaHistoricoMes } from '@/lib/api-types';
 
 interface AntExpensesChartProps {
   data: GastoHormigaHistoricoMes[];
+  meses?: number;
 }
 
 const ABREVIATURAS_MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -33,7 +34,8 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function AntExpensesChart({ data }: AntExpensesChartProps) {
+export function AntExpensesChart(props: AntExpensesChartProps) {
+  const { data, meses = 6 } = props;
   const mesActual = obtenerMesActual();
   const chartData = data.map((item) => ({
     ...item,
@@ -47,10 +49,10 @@ export function AntExpensesChart({ data }: AntExpensesChartProps) {
       : 0;
 
   return (
-    <section className="rounded-2xl bg-card p-5 shadow-sm" aria-label="Evolución de gastos hormiga últimos 6 meses">
+    <section className="rounded-2xl bg-card p-5 shadow-sm" aria-label={`Evolución de gastos hormiga últimos ${meses} meses`}>
       <div className="mb-4 flex items-baseline justify-between">
         <div>
-          <h2 className="text-base font-semibold text-foreground">Últimos 6 meses</h2>
+          <h2 className="text-base font-semibold text-foreground">Últimos {meses} meses</h2>
           <p className="text-xs text-muted-foreground">Promedio: {formatCurrency(promedio)}</p>
         </div>
       </div>

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Bell, Eye, EyeOff, ArrowDownLeft, ArrowUpRight, Plus, TrendingUp, Loader2, PieChart } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
+import { ProfileMenu } from '@/components/ProfileMenu';
 import { TransactionCard } from '@/components/TransactionCard';
 import { BottomNav } from '@/components/BottomNav';
 import { useBalance } from '@/hooks/use-balance';
@@ -28,14 +29,23 @@ function mapTransaccion(t: Transaccion) {
   };
 }
 
+function readStoredUsuario(): { id?: number; nombre?: string } {
+  try {
+    const raw = localStorage.getItem('usuario');
+    return raw ? (JSON.parse(raw) as { id?: number; nombre?: string }) : {};
+  } catch {
+    return {};
+  }
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
-  const usuarioGuardado = JSON.parse(localStorage.getItem('usuario') || '{}');
-  const USUARIO_ID = usuarioGuardado?.id as number | undefined;
+  const usuarioGuardado = useMemo(() => readStoredUsuario(), []);
+  const usuarioId = usuarioGuardado.id;
   const [showBalance, setShowBalance] = useState(true);
 
-  const { data: balance, isLoading: loadingBalance, isError: errorBalance } = useBalance(USUARIO_ID);
-  const { data: transacciones, isLoading: loadingTx } = useTransacciones(USUARIO_ID);
+  const { data: balance, isLoading: loadingBalance, isError: errorBalance } = useBalance(usuarioId);
+  const { data: transacciones, isLoading: loadingTx } = useTransacciones(usuarioId);
 
   const balanceAmount = balance?.monto ?? 0;
   const mensaje = balance?.mensaje ?? '';
@@ -72,6 +82,8 @@ export default function Dashboard() {
               <PieChart className="h-4 w-4" />
               Ver reportes gráficos
             </button>
+
+            <ProfileMenu />
           </div>
         </div>
 

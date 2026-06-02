@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-context";
+import api from "../api/axios";
+import { resetPasswordChecks, validateResetPassword } from "@/lib/password-policy";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
-  const { validateResetToken, resetPassword } = useAuth();
 
   const [status, setStatus] = useState<"checking" | "valid" | "invalid">("checking");
   const [reason, setReason] = useState<"missing" | "expired" | "used" | null>(null);
@@ -20,6 +20,7 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -27,40 +28,59 @@ export default function ResetPasswordPage() {
       setReason("missing");
       return;
     }
-    const result = validateResetToken(token);
-    if (result.ok) {
-      setStatus("valid");
-      setEmail(result.email);
-    } else {
-      setStatus("invalid");
-      setReason(result.reason);
-    }
-  }, [token, validateResetToken]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+    setStatus("checking");
+    api.get("/auth/reset-password/validate", { params: { token } })
+      .then((response) => {
+        setStatus("valid");
+        setEmail(response.data.email);
+      })
+      .catch((error) => {
+        const data = error?.response?.data;
+        const reasonValue = data?.reason ?? "missing";
+        setStatus("invalid");
+        setReason(reasonValue);
+      });
+  }, [token]);
+
+  const checks = resetPasswordChecks(password);
+  const passwordIsValid = Object.values(checks).every(Boolean);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+    const policyError = validateResetPassword(password);
+    if (policyError) {
+      setError(policyError);
       return;
     }
     if (password !== confirm) {
       setError("Las contraseñas no coinciden");
       return;
     }
-    const result = resetPassword(token, password);
-    if (!result.ok) {
-      setError(
-        result.reason === "weak"
-          ? "La contraseña no cumple los requisitos mínimos"
-          : "El enlace no es válido o ha expirado",
-      );
-      return;
+
+    setLoading(true);
+    try {
+      await api.post("/auth/reset-password", { token, password });
+      toast.success("Contraseña actualizada", {
+        description: "Ya puedes iniciar sesión con tu nueva contraseña.",
+      });
+      navigate("/login", { replace: true });
+    } catch (error) {
+      const data = error?.response?.data;
+      const message = data?.error || "El enlace no es válido o ha expirado";
+      if (message.toLowerCase().includes("expir")) {
+        setStatus("invalid");
+        setReason("expired");
+      } else if (message.toLowerCase().includes("usado")) {
+        setStatus("invalid");
+        setReason("used");
+      } else {
+        setError(message);
+      }
+    } finally {
+      setLoading(false);
     }
-    toast.success("Contraseña actualizada", {
-      description: "Ya puedes iniciar sesión con tu nueva contraseña.",
-    });
-    navigate("/login", { replace: true });
   };
 
   return (
@@ -113,7 +133,7 @@ export default function ResetPasswordPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="h-12 px-10 text-base"
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 10 caracteres"
                   />
                   <button
                     type="button"
@@ -124,6 +144,13 @@ export default function ResetPasswordPage() {
                     {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                <ul className="mt-2 space-y-1 text-xs text-slate-500" aria-live="polite">
+                  <li className={checks.minLength ? "text-emerald-600" : ""}>Al menos 10 caracteres</li>
+                  <li className={checks.hasUpper ? "text-emerald-600" : ""}>Una mayúscula</li>
+                  <li className={checks.hasLower ? "text-emerald-600" : ""}>Una minúscula</li>
+                  <li className={checks.hasNumber ? "text-emerald-600" : ""}>Un número</li>
+                  <li className={checks.hasSpecial ? "text-emerald-600" : ""}>Un carácter especial</li>
+                </ul>
               </div>
 
               <div>
@@ -151,9 +178,10 @@ export default function ResetPasswordPage() {
 
               <Button
                 type="submit"
+                disabled={loading || !passwordIsValid || password !== confirm}
                 className="h-14 w-full rounded-xl bg-emerald-600 text-base font-semibold text-white shadow-lg hover:bg-emerald-700"
               >
-                Actualizar contraseña
+                {loading ? "Guardando..." : "Actualizar contraseña"}
               </Button>
             </form>
           )}

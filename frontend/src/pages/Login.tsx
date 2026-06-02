@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from '../api/axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '@/lib/auth-context';
 import { DollarSign, Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Login() {
   const navigate = useNavigate();
+  const { setBackendSession } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: '', password: '' });
   const [touched, setTouched] = useState({ email: false, password: false });
@@ -39,8 +41,11 @@ export default function Login() {
     if (typeof data === 'string' && data.trim()) return data;
     if (data && typeof data === 'object') {
       const maybe = data as { message?: string; error?: string };
-      if (maybe.message) return maybe.message;
-      if (maybe.error) return maybe.error;
+      const text = maybe.message ?? maybe.error ?? '';
+      if (/token/i.test(text)) {
+        return 'Correo o contraseña incorrectos';
+      }
+      if (text) return text;
     }
     if (err?.message === 'Network Error') {
       return 'No se pudo conectar con el servidor. Verifica tu conexión.';
@@ -60,8 +65,8 @@ export default function Login() {
         correo: form.email,
         password: form.password,
       });
-      localStorage.removeItem('usuario');
-      localStorage.setItem('usuario', JSON.stringify(response.data));
+      const { token, usuario } = response.data;
+      setBackendSession({ ...usuario, token });
       toast.success('Sesión iniciada correctamente');
       navigate('/dashboard');
     } catch (error) {
@@ -211,6 +216,15 @@ export default function Login() {
             'Iniciar Sesión'
           )}
         </Button>
+
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          <Link
+            to="/forgot-password"
+            className="font-semibold text-primary hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </p>
 
         <p className="mt-5 text-center text-sm text-muted-foreground">
           ¿No tienes una cuenta?{' '}

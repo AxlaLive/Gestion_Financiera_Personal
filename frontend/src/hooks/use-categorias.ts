@@ -7,7 +7,9 @@ export function useCategorias(usuarioId?: number, tipo?: 'INGRESO' | 'GASTO') {
     queryKey: ['categorias', usuarioId, tipo],
     queryFn: async () => {
       const categorias = await fetchCategorias(usuarioId!);
-      return tipo ? categorias.filter((c: Categoria) => c.tipo === tipo) : categorias;
+      return tipo
+        ? categorias.filter((c: Categoria) => c.tipo?.toUpperCase() === tipo)
+        : categorias;
     },
     enabled: (usuarioId ?? 0) > 0,
   });
