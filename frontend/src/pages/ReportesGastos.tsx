@@ -2,8 +2,13 @@ import React, { useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { parseISO, subMonths, isAfter } from 'date-fns';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+<<<<<<< HEAD
+import { PieChart as PieIcon, Utensils, Car, Download } from 'lucide-react';
+import { useResumenGastosMesActual } from '@/hooks/use-transacciones';
+=======
 import { PieChart as PieIcon, Utensils, Car } from 'lucide-react';
 import { useTransacciones } from '@/hooks/use-transacciones';
+>>>>>>> origin/main
 
 // Colores institucionales y mapping por categoría
 const CATEGORY_COLORS: Record<string, string> = {
@@ -202,6 +207,18 @@ export default function ReportesGastos() {
   return (
     <div className="min-h-screen p-6 bg-background">
       <div className="max-w-5xl mx-auto">
+        {/* Header con título y botón */}
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Reportes de Gastos</h1>
+          <button
+            onClick={() => navigate('/export-report')}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-md"
+          >
+            <Download size={20} />
+            Exportar Reporte
+          </button>
+        </div>
+
         <div className="flex items-start gap-6">
           {/* Sección control (izq) */}
           <div className="w-1/4">

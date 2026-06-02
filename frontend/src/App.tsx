@@ -17,6 +17,7 @@ import GastosHormiga from "./pages/GastosHormiga";
 import ReportesGastos from "./pages/ReportesGastos";
 import Estadisticas from "./Estadisticas";
 import NotFound from "./pages/NotFound";
+import ExportReport from "./pages/ExportReport";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,15 @@ const App = () => (
           <Route path="/transactions" element={<RouteGuard pathname="/transactions"><Transactions /></RouteGuard>} />
           <Route path="/statistics" element={<RouteGuard pathname="/statistics"><Estadisticas /></RouteGuard>} />
           <Route path="/reportes" element={<RouteGuard pathname="/reportes"><ReportesGastos /></RouteGuard>} />
+          <Route
+            path="/export-report"
+            element={
+              (() => {
+                const usuario = localStorage.getItem('usuario');
+                return usuario ? <ExportReport /> : <Navigate to="/login" replace />;
+              })()
+            }
+          />
           <Route path="/gastos-hormiga" element={<RouteGuard pathname="/gastos-hormiga"><GastosHormiga /></RouteGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
